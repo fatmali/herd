@@ -1,12 +1,12 @@
 const { matchPattern, classifyTab, classifyAll, classifyWithContext } = require('../lib/classifier');
 
 describe('matchPattern', () => {
-  test('matches exact domain', () => {
-    expect(matchPattern('https://github.com/org/repo', 'github.com')).toBe(true);
+  test('matches exact domain with wildcard', () => {
+    expect(matchPattern('https://github.com/org/repo', '*github.com*')).toBe(true);
   });
 
   test('matches wildcard in path', () => {
-    expect(matchPattern('https://github.com/myorg/repo/pull/42', 'github.com/*/pull/')).toBe(true);
+    expect(matchPattern('https://github.com/myorg/repo/pull/42', '*github.com/*/pull/*')).toBe(true);
   });
 
   test('matches leading wildcard', () => {
@@ -22,7 +22,7 @@ describe('matchPattern', () => {
   });
 
   test('is case insensitive', () => {
-    expect(matchPattern('https://GitHub.COM/org/repo', 'github.com*')).toBe(true);
+    expect(matchPattern('https://GitHub.COM/org/repo', '*github.com*')).toBe(true);
   });
 
   test('strips protocol before matching', () => {
@@ -39,14 +39,18 @@ describe('matchPattern', () => {
   test('matches azure devops backlogs', () => {
     expect(matchPattern(
       'https://dev.azure.com/office/OC/_backlogs/backlog/FTL/Features',
-      'dev.azure.com/*/_backlogs*'
+      '*dev.azure.com/*/_backlogs*'
     )).toBe(true);
+  });
+
+  test('rejects patterns longer than 500 chars', () => {
+    expect(matchPattern('https://example.com', 'a'.repeat(501))).toBe(false);
   });
 });
 
 describe('classifyTab', () => {
   const categories = {
-    'Code Review': { patterns: ['github.com/*/pull/', '*.visualstudio.com/*pullrequest*'], color: 'green' },
+    'Code Review': { patterns: ['*github.com/*/pull/*', '*.visualstudio.com/*pullrequest*'], color: 'green' },
     'Email': { patterns: ['outlook.office.com*'], color: 'yellow' },
     'Local Dev': { patterns: ['localhost:*', '127.0.0.1:*'], color: 'cyan' },
   };
@@ -79,7 +83,7 @@ describe('classifyTab', () => {
 
 describe('classifyAll', () => {
   const categories = {
-    'Code Review': { patterns: ['github.com/*/pull/'], color: 'green' },
+    'Code Review': { patterns: ['*github.com/*/pull/*'], color: 'green' },
     'Email': { patterns: ['outlook.office.com*'], color: 'yellow' },
   };
 
@@ -111,7 +115,7 @@ describe('classifyAll', () => {
 
 describe('classifyWithContext', () => {
   const categories = {
-    'Code Review': { patterns: ['github.com/*/pull/'], color: 'green' },
+    'Code Review': { patterns: ['*github.com/*/pull/*'], color: 'green' },
     'Documentation': { patterns: ['docs.*'], color: 'purple' },
   };
 

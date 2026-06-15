@@ -367,6 +367,7 @@
       <li><a href="#scheduling">Auto-Organize</a></li>
       <li><a href="#context-menu">Right-Click Menu</a></li>
       <li><a href="#tips">Tips &amp; Best Practices</a></li>
+      <li><a href="#ai-connect">Connecting to AI</a></li>
     </ol>
     <div class="sidebar-back">
       <a href="options.html">
@@ -580,6 +581,78 @@ localhost:8080*</code></pre>
 
       <h3>Multiple windows</h3>
       <p>Each window is organized independently using the same rules.</p>
+    </div>
+
+    <!-- Connecting to AI -->
+    <div class="section" id="ai-connect">
+      <h2>Connecting to AI</h2>
+      <p>Herd works great on its own — but you can also control it from any AI assistant. The extension exposes a <strong>local API</strong> and an <strong>MCP server</strong> that any agent can use.</p>
+
+      <h3>How it works</h3>
+      <ol>
+        <li>The Herd service runs locally and bridges your AI agent ↔ the extension</li>
+        <li>Your agent sends commands (organize, set focus, add rules) via MCP or HTTP</li>
+        <li>The extension picks up commands and applies them to your browser</li>
+      </ol>
+
+      <h3>Setup for Claude Code / Claude Desktop</h3>
+      <p>Add to your <code>claude_desktop_config.json</code> or <code>.mcp.json</code>:</p>
+      <pre><code>{
+  "mcpServers": {
+    "herd": {
+      "command": "npx",
+      "args": ["herd-tabs"]
+    }
+  }
+}</code></pre>
+
+      <h3>Setup for GitHub Copilot CLI</h3>
+      <p>Add to your <code>~/.copilot/config.json</code> under MCP servers:</p>
+      <pre><code>{
+  "mcpServers": {
+    "herd": {
+      "command": "npx",
+      "args": ["herd-tabs"]
+    }
+  }
+}</code></pre>
+      <p>Then just say <em>"organize my tabs"</em> or <em>"focus my tabs on auth-migration"</em> in conversation.</p>
+
+      <h3>Setup for any other agent (HTTP API)</h3>
+      <p>If your AI tool can make HTTP calls, point it at the local API:</p>
+      <pre><code># List tabs
+GET http://localhost:9922/tabs
+
+# Organize tabs
+POST http://localhost:9922/organize
+Body: { "focus_topics": ["auth-migration"] }
+
+# Set focus
+POST http://localhost:9922/focus
+Body: { "topics": ["sprint-review"] }
+
+# Check status
+GET http://localhost:9922/status</code></pre>
+
+      <h3>Available MCP tools</h3>
+      <table>
+        <tr><th>Tool</th><th>Description</th></tr>
+        <tr><td><code>herd_organize</code></td><td>Organize all tabs into groups</td></tr>
+        <tr><td><code>herd_list_tabs</code></td><td>List open tabs with classification</td></tr>
+        <tr><td><code>herd_set_focus</code></td><td>Set focus topics</td></tr>
+        <tr><td><code>herd_add_rule</code></td><td>Add a URL pattern to a category</td></tr>
+        <tr><td><code>herd_remove_rule</code></td><td>Remove a pattern or category</td></tr>
+        <tr><td><code>herd_get_rules</code></td><td>Show all rules</td></tr>
+        <tr><td><code>herd_status</code></td><td>Check extension status</td></tr>
+      </table>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <span>The service starts automatically when your agent invokes it via <code>npx herd-tabs</code>. No need to run it manually.</span>
+      </div>
+
+      <h3>Verifying the connection</h3>
+      <p>Once the service is running, visit <code>http://localhost:9922/health</code> — you should see <code>{"status":"ok"}</code>. The extension popup will also show a "Connected" indicator when the service is reachable.</p>
     </div>
   </div>
 

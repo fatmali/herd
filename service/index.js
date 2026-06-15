@@ -19,9 +19,27 @@
 
 const http = require('http');
 const readline = require('readline');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 const SERVICE_PORT = 9922;
-const EXTENSION_ID = null; // Set after extension is installed
+const TOKEN_PATH = path.join(os.homedir(), '.herd-token');
+
+// ─── Auth Token ──────────────────────────────────────────────────────────────
+
+function loadOrCreateToken() {
+  try {
+    const existing = fs.readFileSync(TOKEN_PATH, 'utf8').trim();
+    if (existing.length >= 32) return existing;
+  } catch {}
+  const token = crypto.randomBytes(32).toString('hex');
+  fs.writeFileSync(TOKEN_PATH, token, { mode: 0o600 });
+  return token;
+}
+
+const AUTH_TOKEN = loadOrCreateToken();
 
 // ─── MCP Protocol Implementation ─────────────────────────────────────────────
 
@@ -138,11 +156,21 @@ let extensionState = {
 
 // Simple HTTP server that the extension polls / receives commands from
 const httpServer = http.createServer((req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // No CORS headers — only same-machine clients (extension service worker, CLI) should call this.
+  // Extension service workers are not subject to same-origin policy.
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+  // Auth check: require token on all endpoints except /health
+  const url = new URL(req.url, `http://localhost:${SERVICE_PORT}`);
+  if (url.pathname !== '/health') {
+    const provided = req.headers['x-herd-token'] || url.searchParams.get('token');
+    if (provided !== AUTH_TOKEN) {
+      res.writeHead(401);
+      res.end(JSON.stringify({ error: 'unauthorized' }));
+      return;
+    }
+  }
 
   let body = '';
   req.on('data', c => body += c);
@@ -216,7 +244,7 @@ async function handleHttp(req, res, body) {
 
   if (req.method === 'GET' && url.pathname === '/health') {
     res.writeHead(200);
-    res.end(JSON.stringify({ status: 'ok', version: '0.1.0' }));
+    res.end(JSON.stringify({ status: 'ok', version: '0.1.0', tokenPath: TOKEN_PATH }));
     return;
   }
 
@@ -247,6 +275,8 @@ function queueCommand(command) {
 async function executeTool(name, params) {
   switch (name) {
     case 'herd_list_tabs':
+      // Queue a state request so extension reports its tabs
+      await queueCommand({ action: 'request-state' });
       return { tabs: extensionState.tabs };
 
     case 'herd_organize':
@@ -265,16 +295,37 @@ async function executeTool(name, params) {
       await queueCommand({ action: 'set-focus', topics: params.topics });
       return { success: true, topics: params.topics };
 
-    case 'herd_add_rule':
+    case 'herd_add_rule': {
+      const VALID_COLORS = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+      if (!params.category || typeof params.category !== 'string' || params.category.length > 100) {
+        return { error: 'Invalid category name' };
+      }
+      if (!params.pattern || typeof params.pattern !== 'string' || params.pattern.length > 500) {
+        return { error: 'Invalid pattern (max 500 chars)' };
+      }
+      if (params.color && !VALID_COLORS.includes(params.color)) {
+        return { error: `Invalid color. Must be one of: ${VALID_COLORS.join(', ')}` };
+      }
+      // Block prototype pollution keys
+      if (['__proto__', 'constructor', 'prototype'].includes(params.category)) {
+        return { error: 'Reserved category name' };
+      }
+      if (Object.keys(extensionState.rules).length >= 50 && !extensionState.rules[params.category]) {
+        return { error: 'Maximum 50 categories reached' };
+      }
       if (!extensionState.rules[params.category]) {
         extensionState.rules[params.category] = { patterns: [], color: params.color || 'grey' };
       }
       if (!extensionState.rules[params.category].patterns.includes(params.pattern)) {
+        if (extensionState.rules[params.category].patterns.length >= 100) {
+          return { error: 'Maximum 100 patterns per category reached' };
+        }
         extensionState.rules[params.category].patterns.push(params.pattern);
       }
       if (params.color) extensionState.rules[params.category].color = params.color;
       await queueCommand({ action: 'update-rules', rules: extensionState.rules });
       return { success: true, category: params.category, pattern: params.pattern };
+    }
 
     case 'herd_remove_rule':
       if (params.pattern && extensionState.rules[params.category]) {
@@ -401,6 +452,7 @@ function handleMcpMessage(msg) {
 httpServer.listen(SERVICE_PORT, '127.0.0.1', () => {
   // Log to stderr (stdout is for MCP protocol)
   process.stderr.write(`herd service running: HTTP on :${SERVICE_PORT}, MCP on stdio\n`);
+  process.stderr.write(`Auth token: ${TOKEN_PATH}\n`);
 });
 
 httpServer.on('error', (err) => {

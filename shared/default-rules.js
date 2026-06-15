@@ -4,11 +4,11 @@
  */
 module.exports = {
   'Code Review': {
-    patterns: ['github.com/*/pull/', 'dev.azure.com/*/pullrequest/', '*.visualstudio.com/*pullrequest*', 'gitlab.com/*/merge_requests/'],
+    patterns: ['*github.com/*/pull/*', '*dev.azure.com/*/pullrequest/*', '*.visualstudio.com/*pullrequest*', '*gitlab.com/*/merge_requests/*'],
     color: 'green'
   },
   'Work Items': {
-    patterns: ['dev.azure.com/*/workitems', 'dev.azure.com/*/_boards', '*.visualstudio.com/*workitem*', 'jira.*.com', 'linear.app'],
+    patterns: ['*dev.azure.com/*/workitems*', '*dev.azure.com/*/_boards*', '*.visualstudio.com/*workitem*', '*jira.*.com*', '*linear.app*'],
     color: 'blue'
   },
   'Incidents': {
@@ -20,11 +20,11 @@ module.exports = {
     color: 'pink'
   },
   'Documentation': {
-    patterns: ['*wiki*', 'docs.*', 'notion.so*', 'learn.microsoft.com*', '*confluence*', '*loop.cloud.microsoft*'],
+    patterns: ['*wiki*', 'docs.*', '*notion.so*', 'learn.microsoft.com*', '*confluence*', '*loop.cloud.microsoft*'],
     color: 'purple'
   },
   'AI & Copilot': {
-    patterns: ['*m365.cloud.microsoft*chat*', '*m365.cloud.microsoft*agent*', '*copilot*', 'chatgpt.com*', 'claude.ai*'],
+    patterns: ['*m365.cloud.microsoft*chat*', '*m365.cloud.microsoft*agent*', '*copilot*', '*chatgpt.com*', '*claude.ai*'],
     color: 'orange'
   },
   'Email': {
@@ -32,7 +32,7 @@ module.exports = {
     color: 'yellow'
   },
   'Meetings & Chat': {
-    patterns: ['teams.microsoft.com*', 'zoom.us*', 'meet.google.com*', '*slack.com*'],
+    patterns: ['*teams.microsoft.com*', '*zoom.us*', '*meet.google.com*', '*slack.com*'],
     color: 'red'
   },
   'Dev Tools': {

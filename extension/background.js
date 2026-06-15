@@ -8,11 +8,11 @@
 
 const DEFAULT_RULES = {
   'Code Review': {
-    patterns: ['github.com/*/pull/', 'dev.azure.com/*/pullrequest/', '*.visualstudio.com/*pullrequest*', 'gitlab.com/*/merge_requests/'],
+    patterns: ['*github.com/*/pull/*', '*dev.azure.com/*/pullrequest/*', '*.visualstudio.com/*pullrequest*', '*gitlab.com/*/merge_requests/*'],
     color: 'green'
   },
   'Work Items': {
-    patterns: ['dev.azure.com/*/workitems', 'dev.azure.com/*/_boards', '*.visualstudio.com/*workitem*', 'jira.*.com', 'linear.app'],
+    patterns: ['*dev.azure.com/*/workitems*', '*dev.azure.com/*/_boards*', '*.visualstudio.com/*workitem*', '*jira.*.com*', '*linear.app*'],
     color: 'blue'
   },
   'Incidents': {
@@ -24,11 +24,11 @@ const DEFAULT_RULES = {
     color: 'pink'
   },
   'Documentation': {
-    patterns: ['*wiki*', 'docs.*', 'notion.so*', 'learn.microsoft.com*', '*confluence*', '*loop.cloud.microsoft*'],
+    patterns: ['*wiki*', 'docs.*', '*notion.so*', 'learn.microsoft.com*', '*confluence*', '*loop.cloud.microsoft*'],
     color: 'purple'
   },
   'AI & Copilot': {
-    patterns: ['*m365.cloud.microsoft*chat*', '*m365.cloud.microsoft*agent*', '*copilot*', 'chatgpt.com*', 'claude.ai*'],
+    patterns: ['*m365.cloud.microsoft*chat*', '*m365.cloud.microsoft*agent*', '*copilot*', '*chatgpt.com*', '*claude.ai*'],
     color: 'orange'
   },
   'Email': {
@@ -36,7 +36,7 @@ const DEFAULT_RULES = {
     color: 'yellow'
   },
   'Meetings & Chat': {
-    patterns: ['teams.microsoft.com*', 'zoom.us*', 'meet.google.com*', '*slack.com*'],
+    patterns: ['*teams.microsoft.com*', '*zoom.us*', '*meet.google.com*', '*slack.com*'],
     color: 'red'
   },
   'Dev Tools': {
@@ -224,14 +224,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-// Allow external messages (from Copilot CLI bridge or other tools)
-chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
-  if (msg.action === 'set-context' && msg.focusTopics) {
-    chrome.storage.local.set({ focusTopics: msg.focusTopics });
-    organizeTabs().then(result => sendResponse(result));
-    return true;
-  }
-});
+// External messaging removed for security — use the MCP service bridge instead
 
 // ─── Core: Organize Tabs ─────────────────────────────────────────────────────
 
@@ -258,17 +251,22 @@ async function organizeTabs() {
 
   // Show notification (default: on, user can disable)
   if (config.showNotification !== false && totalTabs > 0) {
-    const groupNames = results.flatMap(r => r.groupNames || []);
-    const uniqueGroups = [...new Set(groupNames)];
-    chrome.notifications.create('herd-organized', {
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
-      title: 'Tabs organized',
-      message: `${totalTabs} tabs → ${uniqueGroups.length} groups: ${uniqueGroups.slice(0, 4).join(', ')}${uniqueGroups.length > 4 ? '...' : ''}`,
-      priority: 0, // low priority = less intrusive
-    });
-    // Auto-dismiss after 4 seconds
-    setTimeout(() => chrome.notifications.clear('herd-organized'), 4000);
+    // Request notification permission at runtime (optional_permissions)
+    const hasPermission = await chrome.permissions.contains({ permissions: ['notifications'] });
+    if (!hasPermission) {
+      // Can't request from service worker without user gesture — skip silently
+    } else {
+      const groupNames = results.flatMap(r => r.groupNames || []);
+      const uniqueGroups = [...new Set(groupNames)];
+      chrome.notifications.create('herd-organized', {
+        type: 'basic',
+        iconUrl: 'icons/icon128.png',
+        title: 'Tabs organized',
+        message: `${totalTabs} tabs → ${uniqueGroups.length} groups: ${uniqueGroups.slice(0, 4).join(', ')}${uniqueGroups.length > 4 ? '...' : ''}`,
+        priority: 0,
+      });
+      setTimeout(() => chrome.notifications.clear('herd-organized'), 4000);
+    }
   }
 
   return { success: true, windows: results.length, totalTabs, totalGrouped, timestamp };
@@ -355,6 +353,7 @@ function classifyTab(url, rules) {
 }
 
 function matchPattern(url, pattern) {
+  if (typeof pattern !== 'string' || pattern.length > 500) return false;
   const normalizedUrl = url.replace(/^https?:\/\//, '').toLowerCase();
   const normalizedPattern = pattern.replace(/^https?:\/\//, '').toLowerCase();
 
@@ -363,7 +362,7 @@ function matchPattern(url, pattern) {
     .replace(/\*/g, '.*');
 
   try {
-    return new RegExp(regexStr).test(normalizedUrl);
+    return new RegExp(`^${regexStr}$`).test(normalizedUrl);
   } catch {
     return normalizedUrl.includes(normalizedPattern);
   }
@@ -413,6 +412,32 @@ async function pollService() {
   }
 }
 
+// ─── Validation ──────────────────────────────────────────────────────────────
+
+const VALID_COLORS = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+const MAX_CATEGORIES = 50;
+const MAX_PATTERNS_PER_CATEGORY = 100;
+const MAX_PATTERN_LENGTH = 500;
+
+function validateRules(rules) {
+  if (!rules || typeof rules !== 'object' || Array.isArray(rules)) return false;
+  const keys = Object.keys(rules);
+  if (keys.length > MAX_CATEGORIES) return false;
+  for (const key of keys) {
+    // Block prototype pollution
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') return false;
+    const cat = rules[key];
+    if (!cat || typeof cat !== 'object' || Array.isArray(cat)) return false;
+    if (!Array.isArray(cat.patterns)) return false;
+    if (cat.patterns.length > MAX_PATTERNS_PER_CATEGORY) return false;
+    for (const p of cat.patterns) {
+      if (typeof p !== 'string' || p.length > MAX_PATTERN_LENGTH) return false;
+    }
+    if (cat.color && !VALID_COLORS.includes(cat.color)) return false;
+  }
+  return true;
+}
+
 async function handleServiceCommand(cmd) {
   switch (cmd.action) {
     case 'organize':
@@ -428,14 +453,61 @@ async function handleServiceCommand(cmd) {
       break;
 
     case 'update-rules':
-      await chrome.storage.local.set({ rules: cmd.rules });
-      rebuildContextMenu(cmd.rules);
-      await organizeTabs();
+      if (validateRules(cmd.rules)) {
+        await chrome.storage.local.set({ rules: cmd.rules });
+        rebuildContextMenu(cmd.rules);
+        await organizeTabs();
+      }
+      break;
+
+    case 'request-state':
+      // Service explicitly requests state — respond on next poll
+      pendingStateReport = true;
       break;
   }
 }
 
+let pendingStateReport = false;
+let serviceToken = null;
+
+async function loadServiceToken() {
+  // Try to read token from storage (user configures in options)
+  const { herdServiceToken } = await chrome.storage.local.get('herdServiceToken');
+  serviceToken = herdServiceToken || null;
+}
+
+loadServiceToken();
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.herdServiceToken) {
+    serviceToken = changes.herdServiceToken.newValue || null;
+  }
+});
+
+async function pollService() {
+  if (!serviceToken) return; // Don't poll without auth
+  try {
+    const res = await fetch(`${SERVICE_URL}/ext/commands`, {
+      headers: { 'X-Herd-Token': serviceToken },
+    });
+    if (res.status === 200) {
+      const commands = await res.json();
+      for (const cmd of commands) {
+        await handleServiceCommand(cmd);
+      }
+    }
+  } catch {
+    // Service not running, that's fine
+  }
+
+  // Only report state when explicitly requested (pull model)
+  if (pendingStateReport) {
+    pendingStateReport = false;
+    await reportStateToService();
+  }
+}
+
 async function reportStateToService() {
+  if (!serviceToken) return;
   try {
     const data = await chrome.storage.local.get(['enabled', 'lastRun', 'schedule', 'focusTopics', 'rules']);
     const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
@@ -443,14 +515,16 @@ async function reportStateToService() {
     for (const win of windows) {
       for (const tab of win.tabs) {
         if (!tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
-          tabs.push({ id: tab.id, title: tab.title, url: tab.url, windowId: win.id });
+          // Strip query strings and fragments to avoid leaking tokens/session IDs
+          const cleanUrl = tab.url.split('?')[0].split('#')[0];
+          tabs.push({ id: tab.id, title: tab.title, url: cleanUrl, windowId: win.id });
         }
       }
     }
 
     await fetch(`${SERVICE_URL}/ext/state`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Herd-Token': serviceToken },
       body: JSON.stringify({ ...data, tabs }),
     });
   } catch {
@@ -458,8 +532,5 @@ async function reportStateToService() {
   }
 }
 
-// Poll every 3 seconds for commands + report state
-setInterval(async () => {
-  await pollService();
-  await reportStateToService();
-}, 3000);
+// Poll every 3 seconds for commands (no longer pushes state unconditionally)
+setInterval(() => pollService(), 3000);

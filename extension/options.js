@@ -179,7 +179,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       const text = await file.text();
       try {
         const imported = JSON.parse(text);
-        config.rules = { ...config.rules, ...imported };
+        if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
+          alert('Invalid format: expected an object with categories');
+          return;
+        }
+        // Validate and sanitize imported rules
+        const VALID_COLORS = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+        const sanitized = {};
+        for (const [key, val] of Object.entries(imported)) {
+          if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+          if (!val || typeof val !== 'object' || !Array.isArray(val.patterns)) continue;
+          const patterns = val.patterns.filter(p => typeof p === 'string' && p.length <= 500).slice(0, 100);
+          const color = VALID_COLORS.includes(val.color) ? val.color : 'grey';
+          sanitized[key] = { patterns, color };
+        }
+        config.rules = { ...config.rules, ...sanitized };
         await chrome.storage.local.set({ rules: config.rules });
         renderRules();
       } catch {

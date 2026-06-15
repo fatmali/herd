@@ -1,11 +1,15 @@
 const http = require('http');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const path = require('path');
+const os = require('os');
 
 const SERVICE_PATH = path.join(__dirname, '..', 'service', 'index.js');
+const TOKEN_PATH = path.join(os.homedir(), '.herd-token');
 const PORT = 9922;
 
 let serviceProcess;
+let authToken;
 
 function startService() {
   return new Promise((resolve, reject) => {
@@ -13,9 +17,16 @@ function startService() {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     serviceProcess.stderr.on('data', (data) => {
-      if (data.toString().includes('running')) resolve();
+      if (data.toString().includes('running')) {
+        // Read token after service creates it
+        authToken = fs.readFileSync(TOKEN_PATH, 'utf8').trim();
+        resolve();
+      }
     });
-    setTimeout(() => resolve(), 3000); // fallback
+    setTimeout(() => {
+      try { authToken = fs.readFileSync(TOKEN_PATH, 'utf8').trim(); } catch {}
+      resolve();
+    }, 3000);
   });
 }
 
@@ -30,7 +41,10 @@ function request(method, urlPath, body = null) {
       port: PORT,
       path: urlPath,
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Herd-Token': authToken || '',
+      },
     };
     const req = http.request(options, (res) => {
       let data = '';
@@ -58,11 +72,28 @@ describe('service HTTP API', () => {
     stopService();
   });
 
-  test('GET /health returns ok', async () => {
+  test('GET /health returns ok (no auth needed)', async () => {
     const res = await request('GET', '/health');
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('ok');
     expect(res.body.version).toBe('0.1.0');
+  });
+
+  test('Unauthorized request returns 401', async () => {
+    // Make a request without the token
+    const res = await new Promise((resolve, reject) => {
+      const req = http.request({
+        hostname: '127.0.0.1', port: PORT, path: '/status', method: 'GET',
+        headers: { 'Content-Type': 'application/json' }, // no X-Herd-Token
+      }, (r) => {
+        let data = '';
+        r.on('data', chunk => data += chunk);
+        r.on('end', () => resolve({ status: r.statusCode, body: data ? JSON.parse(data) : null }));
+      });
+      req.on('error', reject);
+      req.end();
+    });
+    expect(res.status).toBe(401);
   });
 
   test('GET /status returns extension state', async () => {
