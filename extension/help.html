@@ -362,7 +362,6 @@
       <li><a href="#how-it-works">How It Works</a></li>
       <li><a href="#rules">Rules &amp; Categories</a></li>
       <li><a href="#patterns">URL Pattern Syntax</a></li>
-      <li><a href="#focus-topics">Focus Topics</a></li>
       <li><a href="#colors">Colors</a></li>
       <li><a href="#scheduling">Auto-Organize</a></li>
       <li><a href="#context-menu">Right-Click Menu</a></li>
@@ -477,32 +476,6 @@ localhost:3000*
 localhost:8080*</code></pre>
     </div>
 
-    <!-- Focus Topics -->
-    <div class="section" id="focus-topics">
-      <h2>Focus Topics</h2>
-      <p>Focus topics highlight tabs related to your current work. Matching tabs are pulled into a special <strong>"Current Focus"</strong> group (yellow) at the top.</p>
-
-      <h3>How It Works</h3>
-      <p>Topics match against both the tab <strong>title</strong> and <strong>URL</strong> as a case-insensitive substring.</p>
-      <pre><code># Focus topic: "auth-migration"
-# ✓ Title: "PR #4421 - Migrate auth-migration to MSAL"
-# ✓ URL:   "github.com/org/repo/issues?q=auth-migration"</code></pre>
-
-      <h3>Setting Focus Topics</h3>
-      <ul>
-        <li><strong>Popup</strong> — Type comma-separated topics in the Focus Topics field</li>
-        <li><strong>CLI</strong> — The herd service can set topics via WorkIQ based on your calendar</li>
-      </ul>
-
-      <div class="callout callout-tip">
-        <span class="callout-icon">💡</span>
-        <span>Use specific keywords: ticket numbers (<code>PROJ-1234</code>), branch names (<code>auth-migration</code>), or codenames. Avoid generic words like "meeting" that match too broadly.</span>
-      </div>
-
-      <h3>Focus vs. Rules</h3>
-      <p>Focus topics take <strong>priority over rules</strong>. A matching tab goes to "Current Focus" even if it also matches a category. Clear your topics to return tabs to normal groups.</p>
-    </div>
-
     <!-- Colors -->
     <div class="section" id="colors">
       <h2>Colors</h2>
@@ -536,7 +509,7 @@ localhost:8080*</code></pre>
         <dt>Schedule interval (settings)</dt>
         <dd>15 min, 30 min, 1 hour, 2 hours, or manual-only.</dd>
         <dt>Collapse inactive groups</dt>
-        <dd>Minimizes groups not matching your current focus to reduce noise.</dd>
+        <dd>Minimizes inactive groups to reduce noise.</dd>
       </dl>
 
       <h3>When Does It Run?</h3>
@@ -574,8 +547,8 @@ localhost:8080*</code></pre>
       <h3>Use few categories</h3>
       <p>5–8 is the sweet spot. Too many defeats the purpose. Let unmatched tabs stay ungrouped.</p>
 
-      <h3>Focus topics for deep work</h3>
-      <p>Type your topic in the popup before a focus session. Related tabs surface; everything else collapses.</p>
+      <h3>Let the AI agent focus for you</h3>
+      <p>With the AI bridge connected, ask your agent to "focus on auth migration" — it will create a temporary group for related tabs.</p>
 
       <h3>Export your rules</h3>
       <p>Settings → Export. Share with teammates or keep a backup before experimenting.</p>
@@ -592,7 +565,7 @@ localhost:8080*</code></pre>
       <h3>What Herd can access</h3>
       <table>
         <tr><th>Data</th><th>Used for</th></tr>
-        <tr><td>Tab titles</td><td>Matching against focus topics</td></tr>
+        <tr><td>Tab titles</td><td>Matching against classification rules</td></tr>
         <tr><td>Tab URLs</td><td>Matching against classification rules</td></tr>
         <tr><td>Tab group assignments</td><td>Creating and updating tab groups</td></tr>
         <tr><td>Your custom rules &amp; settings</td><td>Stored locally in extension storage</td></tr>
@@ -627,7 +600,7 @@ localhost:8080*</code></pre>
         <tr><th>Permission</th><th>Why it's needed</th></tr>
         <tr><td><code>tabs</code></td><td>Read tab titles and URLs to classify them</td></tr>
         <tr><td><code>tabGroups</code></td><td>Create and manage tab groups</td></tr>
-        <tr><td><code>storage</code></td><td>Save your rules, settings, and focus topics locally</td></tr>
+        <tr><td><code>storage</code></td><td>Save your rules and settings locally</td></tr>
         <tr><td><code>alarms</code></td><td>Schedule periodic auto-organize runs</td></tr>
         <tr><td><code>contextMenus</code></td><td>Add "Assign to category" right-click menu</td></tr>
         <tr><td><code>nativeMessaging</code></td><td>Connect to the local AI bridge (optional)</td></tr>

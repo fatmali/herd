@@ -206,37 +206,6 @@
       transform: translateX(16px);
     }
 
-    /* Focus input */
-    .focus-input {
-      width: 100%;
-      padding: 9px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-family: var(--font-mono);
-      font-size: 11.5px;
-      background: var(--white);
-      color: var(--charcoal);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .focus-input::placeholder {
-      color: var(--grey);
-      opacity: 0.6;
-    }
-
-    .focus-input:focus {
-      outline: none;
-      border-color: var(--green);
-      box-shadow: 0 0 0 3px var(--green-subtle);
-    }
-
-    .focus-hint {
-      font-size: 10.5px;
-      color: var(--grey);
-      margin-top: 6px;
-      line-height: 1.4;
-    }
-
     .ai-hint {
       font-size: 10.5px;
       color: var(--grey);
@@ -329,12 +298,6 @@
     <div class="ai-hint" id="aiHint"></div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Focus Topics</div>
-    <input type="text" class="focus-input" id="focusInput" 
-      placeholder="auth-migration, sprint-review">
-    <div class="focus-hint">Comma-separated. Matching tabs get promoted to "Current Focus" group.</div>
-  </div>
 
   <div class="footer">
     <a href="#" id="optionsLink">Manage Rules &amp; Categories →</a>

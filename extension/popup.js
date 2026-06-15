@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ungroupBtn = document.getElementById('ungroupBtn');
   const enabledToggle = document.getElementById('enabledToggle');
   const notifyToggle = document.getElementById('notifyToggle');
-  const focusInput = document.getElementById('focusInput');
   const optionsLink = document.getElementById('optionsLink');
 
   // Load current status
@@ -17,12 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load notification preference
   const { showNotification } = await chrome.storage.local.get('showNotification');
   notifyToggle.checked = showNotification !== false;
-
-  // Load focus topics
-  const { focusTopics } = await chrome.storage.local.get('focusTopics');
-  if (focusTopics && focusTopics.length > 0) {
-    focusInput.value = focusTopics.join(', ');
-  }
 
   // Organize now
   organizeBtn.addEventListener('click', async () => {
@@ -58,19 +51,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Toggle notifications
   notifyToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ showNotification: notifyToggle.checked });
-  });
-
-  // Focus topics (debounced save)
-  let focusTimeout;
-  focusInput.addEventListener('input', () => {
-    clearTimeout(focusTimeout);
-    focusTimeout = setTimeout(async () => {
-      const topics = focusInput.value
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => t.length > 0);
-      await chrome.storage.local.set({ focusTopics: topics });
-    }, 500);
   });
 
   // Options page
