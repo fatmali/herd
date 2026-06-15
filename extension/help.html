@@ -367,6 +367,7 @@
       <li><a href="#scheduling">Auto-Organize</a></li>
       <li><a href="#context-menu">Right-Click Menu</a></li>
       <li><a href="#tips">Tips &amp; Best Practices</a></li>
+      <li><a href="#privacy">Privacy &amp; Security</a></li>
       <li><a href="#ai-connect">Connecting to AI</a></li>
     </ol>
     <div class="sidebar-back">
@@ -583,76 +584,131 @@ localhost:8080*</code></pre>
       <p>Each window is organized independently using the same rules.</p>
     </div>
 
-    <!-- Connecting to AI -->
-    <div class="section" id="ai-connect">
-      <h2>Connecting to AI</h2>
-      <p>Herd works great on its own — but you can also control it from any AI assistant. The extension exposes a <strong>local API</strong> and an <strong>MCP server</strong> that any agent can use.</p>
+    <!-- Privacy & Security -->
+    <div class="section" id="privacy">
+      <h2>Privacy &amp; Security</h2>
+      <p>Herd is designed with minimal permissions and zero external communication. Here's a full breakdown of what it can and cannot do.</p>
 
-      <h3>How it works</h3>
-      <ol>
-        <li>The Herd service runs locally and bridges your AI agent ↔ the extension</li>
-        <li>Your agent sends commands (organize, set focus, add rules) via MCP or HTTP</li>
-        <li>The extension picks up commands and applies them to your browser</li>
-      </ol>
-
-      <h3>Setup for Claude Code / Claude Desktop</h3>
-      <p>Add to your <code>claude_desktop_config.json</code> or <code>.mcp.json</code>:</p>
-      <pre><code>{
-  "mcpServers": {
-    "herd": {
-      "command": "npx",
-      "args": ["herd-tabs"]
-    }
-  }
-}</code></pre>
-
-      <h3>Setup for GitHub Copilot CLI</h3>
-      <p>Add to your <code>~/.copilot/config.json</code> under MCP servers:</p>
-      <pre><code>{
-  "mcpServers": {
-    "herd": {
-      "command": "npx",
-      "args": ["herd-tabs"]
-    }
-  }
-}</code></pre>
-      <p>Then just say <em>"organize my tabs"</em> or <em>"focus my tabs on auth-migration"</em> in conversation.</p>
-
-      <h3>Setup for any other agent (HTTP API)</h3>
-      <p>If your AI tool can make HTTP calls, point it at the local API:</p>
-      <pre><code># List tabs
-GET http://localhost:9922/tabs
-
-# Organize tabs
-POST http://localhost:9922/organize
-Body: { "focus_topics": ["auth-migration"] }
-
-# Set focus
-POST http://localhost:9922/focus
-Body: { "topics": ["sprint-review"] }
-
-# Check status
-GET http://localhost:9922/status</code></pre>
-
-      <h3>Available MCP tools</h3>
+      <h3>What Herd can access</h3>
       <table>
-        <tr><th>Tool</th><th>Description</th></tr>
-        <tr><td><code>herd_organize</code></td><td>Organize all tabs into groups</td></tr>
-        <tr><td><code>herd_list_tabs</code></td><td>List open tabs with classification</td></tr>
-        <tr><td><code>herd_set_focus</code></td><td>Set focus topics</td></tr>
-        <tr><td><code>herd_add_rule</code></td><td>Add a URL pattern to a category</td></tr>
-        <tr><td><code>herd_remove_rule</code></td><td>Remove a pattern or category</td></tr>
-        <tr><td><code>herd_get_rules</code></td><td>Show all rules</td></tr>
-        <tr><td><code>herd_status</code></td><td>Check extension status</td></tr>
+        <tr><th>Data</th><th>Used for</th></tr>
+        <tr><td>Tab titles</td><td>Matching against focus topics</td></tr>
+        <tr><td>Tab URLs</td><td>Matching against classification rules</td></tr>
+        <tr><td>Tab group assignments</td><td>Creating and updating tab groups</td></tr>
+        <tr><td>Your custom rules &amp; settings</td><td>Stored locally in extension storage</td></tr>
       </table>
+
+      <h3>What Herd cannot access</h3>
+      <table>
+        <tr><th>Data</th><th>Why not</th></tr>
+        <tr><td>Page content (text, images, forms)</td><td>No content scripts — never reads the DOM</td></tr>
+        <tr><td>Cookies or login sessions</td><td>No <code>cookies</code> permission</td></tr>
+        <tr><td>Passwords or autofill data</td><td>No access to credential storage</td></tr>
+        <tr><td>Browser history</td><td>No <code>history</code> permission</td></tr>
+        <tr><td>Bookmarks</td><td>No <code>bookmarks</code> permission</td></tr>
+        <tr><td>Downloads</td><td>No <code>downloads</code> permission</td></tr>
+        <tr><td>Other extensions</td><td>No <code>management</code> permission</td></tr>
+        <tr><td>Microphone / camera</td><td>Not requested</td></tr>
+        <tr><td>File system</td><td>Not accessible from extensions</td></tr>
+      </table>
+
+      <h3>Network &amp; data</h3>
+      <dl>
+        <dt>No external connections</dt>
+        <dd>Herd never sends any data to remote servers. Everything stays on your machine.</dd>
+        <dt>No telemetry</dt>
+        <dd>No analytics, no crash reporting, no usage tracking of any kind.</dd>
+        <dt>Local-only storage</dt>
+        <dd>Rules and settings live in the browser's local extension storage. Deleted when you uninstall.</dd>
+      </dl>
+
+      <h3>Extension permissions explained</h3>
+      <table>
+        <tr><th>Permission</th><th>Why it's needed</th></tr>
+        <tr><td><code>tabs</code></td><td>Read tab titles and URLs to classify them</td></tr>
+        <tr><td><code>tabGroups</code></td><td>Create and manage tab groups</td></tr>
+        <tr><td><code>storage</code></td><td>Save your rules, settings, and focus topics locally</td></tr>
+        <tr><td><code>alarms</code></td><td>Schedule periodic auto-organize runs</td></tr>
+        <tr><td><code>contextMenus</code></td><td>Add "Assign to category" right-click menu</td></tr>
+        <tr><td><code>nativeMessaging</code></td><td>Connect to the local AI bridge (optional)</td></tr>
+      </table>
+
+      <h3>When connected to an AI agent</h3>
+      <p>If you enable the AI bridge, your agent gains access to the same data Herd itself uses — tab titles, URLs, and rules. Specifically:</p>
+      <ul>
+        <li>The bridge runs on <code>127.0.0.1:9922</code> only — never exposed to the network</li>
+        <li>All requests require a bearer token from <code>~/.herd/auth.json</code> (user-only file permissions)</li>
+        <li>Tab data is held in memory only while the bridge runs — never written to disk</li>
+        <li>Error logs (<code>~/.herd/bridge.log</code>) contain timestamps and error messages only, never tab data</li>
+      </ul>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠️</span>
+        <span><strong>Tab URLs may reveal sensitive info</strong> — internal tool URLs, ticket numbers, document titles. Consider this when connecting AI agents that send data to external servers.</span>
+      </div>
 
       <div class="callout callout-tip">
         <span class="callout-icon">💡</span>
-        <span>The service starts automatically when your agent invokes it via <code>npx herd-tabs</code>. No need to run it manually.</span>
+        <span>You can disconnect the AI bridge at any time with <code>npx herd-tabs --uninstall</code>. The extension continues working standalone with zero external communication.</span>
+      </div>
+    </div>
+
+    <!-- Connecting to AI -->
+    <div class="section" id="ai-connect">
+      <h2>Connecting to AI</h2>
+      <p>Herd works standalone, but you can also control it from any AI assistant — GitHub Copilot, Claude Code, ChatGPT, or any agent that supports skill files.</p>
+
+      <h3>Setup (one-time, ~2 minutes)</h3>
+      <ol>
+        <li><strong>Install the bridge</strong> — open a terminal and run:</li>
+      </ol>
+      <pre><code>npx herd-tabs --install</code></pre>
+      <p>This registers a native messaging host so the bridge starts automatically whenever your browser is open. No manual process to manage.</p>
+
+      <ol start="2">
+        <li><strong>Restart your browser</strong> (close all windows, reopen)</li>
+        <li><strong>Copy the skill file</strong> to your AI agent:</li>
+      </ol>
+
+      <table>
+        <tr><th>Agent</th><th>Copy <code>shared/skill.md</code> to</th></tr>
+        <tr><td>GitHub Copilot CLI</td><td><code>~/.copilot/skills/herd.md</code></td></tr>
+        <tr><td>Claude Code</td><td><code>~/.claude/skills/herd.md</code></td></tr>
+        <tr><td>ChatGPT</td><td>Paste contents into custom instructions</td></tr>
+        <tr><td>Other agents</td><td>Wherever your agent reads skill/prompt files</td></tr>
+      </table>
+
+      <h3>What you can say</h3>
+      <p>Once linked, just talk naturally:</p>
+      <ul>
+        <li>"Organize my tabs"</li>
+        <li>"Focus my tabs on the auth migration"</li>
+        <li>"Add a rule for Figma tabs in the Design category"</li>
+        <li>"What tabs do I have open?"</li>
+        <li>"Remove the incidents category"</li>
+      </ul>
+
+      <h3>How it works</h3>
+      <ol>
+        <li>Browser opens → extension spawns the bridge via native messaging</li>
+        <li>Bridge runs an HTTP server on <code>localhost:9922</code> (token-authenticated)</li>
+        <li>Your AI agent reads the skill file, which tells it about the available endpoints</li>
+        <li>Agent calls the endpoints (using curl/fetch) → bridge → extension → tabs grouped</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">🔒</span>
+        <span>All API requests require a bearer token stored in <code>~/.herd/auth.json</code>. The server only binds to localhost — it's never exposed to the network.</span>
       </div>
 
-      <h3>Verifying the connection</h3>
-      <p>Once the service is running, visit <code>http://localhost:9922/health</code> — you should see <code>{"status":"ok"}</code>. The extension popup will also show a "Connected" indicator when the service is reachable.</p>
+      <h3>Verifying it works</h3>
+      <p>Check bridge status:</p>
+      <pre><code>npx herd-tabs --status</code></pre>
+      <p>Or ask your agent: <em>"What's my herd status?"</em> — if it responds with your tab count, you're connected.</p>
+
+      <h3>Uninstalling</h3>
+      <pre><code>npx herd-tabs --uninstall</code></pre>
+      <p>Removes the native host, registry entries, and auth token. The extension continues working standalone.</p>
     </div>
   </div>
 

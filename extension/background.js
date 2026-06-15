@@ -382,7 +382,135 @@ function mapColor(color) {
   return valid.includes(color) ? color : 'grey';
 }
 
-// ─── Status ──────────────────────────────────────────────────────────────────
+// ─── Native Messaging Bridge ─────────────────────────────────────────────────
+
+const NATIVE_HOST = 'com.herd.bridge';
+let nativePort = null;
+let bridgeConnected = false;
+
+function connectNativeBridge() {
+  try {
+    nativePort = chrome.runtime.connectNative(NATIVE_HOST);
+    bridgeConnected = true;
+
+    nativePort.onMessage.addListener((msg) => {
+      if (msg.type === 'command') {
+        handleBridgeCommand(msg);
+      } else if (msg.type === 'bridge-ready') {
+        bridgeConnected = true;
+        // Send current state to bridge
+        sendStateToBridge();
+      }
+    });
+
+    nativePort.onDisconnect.addListener(() => {
+      bridgeConnected = false;
+      nativePort = null;
+      // Retry connection after 30 seconds
+      setTimeout(connectNativeBridge, 30000);
+    });
+
+    // Send initial state
+    sendStateToBridge();
+  } catch (err) {
+    bridgeConnected = false;
+    // Native host not installed — extension works standalone
+    console.log('herd: Native bridge not available (standalone mode)');
+  }
+}
+
+async function sendStateToBridge() {
+  if (!nativePort) return;
+
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  const tabs = [];
+  for (const win of windows) {
+    for (const tab of win.tabs) {
+      if (!tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
+        tabs.push({ id: tab.id, title: tab.title, url: tab.url, windowId: win.id });
+      }
+    }
+  }
+
+  const config = await chrome.storage.local.get(['rules', 'enabled', 'lastRun', 'focusTopics', 'schedule']);
+
+  nativePort.postMessage({
+    type: 'state-update',
+    data: {
+      tabs,
+      rules: config.rules || DEFAULT_RULES,
+      enabled: config.enabled !== false,
+      lastRun: config.lastRun,
+      focusTopics: config.focusTopics || [],
+      schedule: config.schedule || SCHEDULE_MINUTES,
+    },
+  });
+}
+
+async function handleBridgeCommand(msg) {
+  let result = { success: true };
+
+  switch (msg.action) {
+    case 'organize':
+      if (msg.focusTopics) {
+        await chrome.storage.local.set({ focusTopics: msg.focusTopics });
+      }
+      result = await organizeTabs();
+      break;
+
+    case 'set-focus':
+      await chrome.storage.local.set({ focusTopics: msg.topics || [] });
+      result = await organizeTabs();
+      break;
+
+    case 'add-rule': {
+      const { rules } = await chrome.storage.local.get('rules');
+      const currentRules = rules || DEFAULT_RULES;
+      if (!currentRules[msg.category]) {
+        currentRules[msg.category] = { patterns: [], color: msg.color || 'grey' };
+      }
+      if (!currentRules[msg.category].patterns.includes(msg.pattern)) {
+        currentRules[msg.category].patterns.push(msg.pattern);
+      }
+      if (msg.color) currentRules[msg.category].color = msg.color;
+      await chrome.storage.local.set({ rules: currentRules });
+      result = { success: true, category: msg.category };
+      break;
+    }
+
+    case 'remove-rule': {
+      const { rules } = await chrome.storage.local.get('rules');
+      const currentRules = rules || DEFAULT_RULES;
+      if (msg.pattern && currentRules[msg.category]) {
+        currentRules[msg.category].patterns = currentRules[msg.category].patterns.filter(p => p !== msg.pattern);
+        if (currentRules[msg.category].patterns.length === 0) delete currentRules[msg.category];
+      } else {
+        delete currentRules[msg.category];
+      }
+      await chrome.storage.local.set({ rules: currentRules });
+      result = { success: true };
+      break;
+    }
+  }
+
+  // Send response back to bridge
+  if (nativePort && msg.id) {
+    nativePort.postMessage({ type: 'response', id: msg.id, data: result });
+  }
+
+  // Update bridge with new state
+  sendStateToBridge();
+}
+
+// Connect on startup
+connectNativeBridge();
+
+// Update bridge state periodically and after tab changes
+chrome.tabs.onUpdated.addListener(() => sendStateToBridge());
+chrome.tabs.onRemoved.addListener(() => sendStateToBridge());
+chrome.tabs.onCreated.addListener(() => sendStateToBridge());
+
+// ─── Status (updated to include bridge) ──────────────────────────────────────
 
 async function getStatus() {
   const data = await chrome.storage.local.get(['enabled', 'lastRun', 'schedule', 'focusTopics']);
@@ -391,6 +519,7 @@ async function getStatus() {
     lastRun: data.lastRun,
     schedule: data.schedule,
     focusTopics: data.focusTopics || [],
+    bridgeConnected,
   };
 }
 

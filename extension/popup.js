@@ -90,14 +90,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok) {
         aiDot.className = 'status-dot';
         aiStatus.textContent = 'Connected';
-        aiHint.innerHTML = 'Manage rules from your AI agent:<br><code>"Add *figma.com* to Design"</code>';
+        aiHint.innerHTML = 'Your AI agent can organize tabs. Try:<br><code>"Organize my tabs"</code>';
       } else {
         throw new Error();
       }
     } catch {
       aiDot.className = 'status-dot off';
       aiStatus.textContent = 'Not connected';
-      aiHint.innerHTML = 'Start the service to manage rules from Copilot/Claude:<br><code>node ~/source/herd/service/index.js</code>';
+      aiHint.innerHTML = 'Run <code>npx herd-tabs --install</code> to enable AI control.';
     }
   }
   checkAiConnection();

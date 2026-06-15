@@ -3,7 +3,7 @@
   "name": "Herd - Tab Organizer",
   "version": "0.1.0",
   "description": "Automatically groups your browser tabs by activity. Install and forget.",
-  "permissions": ["tabs", "tabGroups", "alarms", "storage", "contextMenus"],
+  "permissions": ["tabs", "tabGroups", "alarms", "storage", "contextMenus", "nativeMessaging"],
   "optional_permissions": ["notifications"],
   "background": {
     "service_worker": "background.js"

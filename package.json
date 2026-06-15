@@ -4,7 +4,8 @@
   "description": "Herd your tabs. Never lose context again. AI-powered tab organizer that groups browser tabs by work context.",
   "main": "service/index.js",
   "bin": {
-    "herd": "./service/index.js"
+    "herd": "./service/index.js",
+    "herd-tabs": "./service/install.js"
   },
   "scripts": {
     "start": "node service/index.js",
