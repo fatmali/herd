@@ -1,0 +1,40 @@
+{
+  "name": "herd",
+  "version": "0.1.0",
+  "description": "Herd your tabs. Never lose context again. AI-powered tab organizer that groups browser tabs by work context.",
+  "main": "service/index.js",
+  "bin": {
+    "herd": "./service/index.js"
+  },
+  "scripts": {
+    "start": "node service/index.js",
+    "test": "jest",
+    "list": "node scripts/list-tabs.js",
+    "add-rule": "node scripts/add-rule.js",
+    "learn": "node scripts/learn.js"
+  },
+  "keywords": [
+    "tabs",
+    "browser",
+    "organizer",
+    "productivity",
+    "mcp",
+    "tab-groups",
+    "copilot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chrome-remote-interface": "^0.33.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "devDependencies": {
+    "jest": "^30.4.2"
+  }
+}

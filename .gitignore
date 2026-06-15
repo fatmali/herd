@@ -1,0 +1,3 @@
+node_modules/
+.herd-plan.json
+*.log

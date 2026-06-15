@@ -1,0 +1,465 @@
+/**
+ * herd - background service worker
+ * 
+ * Core logic: classify tabs → group them. Runs on install, on alarm, and on demand.
+ */
+
+// ─── Default Rules ───────────────────────────────────────────────────────────
+
+const DEFAULT_RULES = {
+  'Code Review': {
+    patterns: ['github.com/*/pull/', 'dev.azure.com/*/pullrequest/', '*.visualstudio.com/*pullrequest*', 'gitlab.com/*/merge_requests/'],
+    color: 'green'
+  },
+  'Work Items': {
+    patterns: ['dev.azure.com/*/workitems', 'dev.azure.com/*/_boards', '*.visualstudio.com/*workitem*', 'jira.*.com', 'linear.app'],
+    color: 'blue'
+  },
+  'Incidents': {
+    patterns: ['*microsofticm.com*', '*pagerduty.com*', '*opsgenie.com*', '*servicenow.com*'],
+    color: 'red'
+  },
+  'Design': {
+    patterns: ['*figma.com*', '*canva.com*', '*miro.com*'],
+    color: 'pink'
+  },
+  'Documentation': {
+    patterns: ['*wiki*', 'docs.*', 'notion.so*', 'learn.microsoft.com*', '*confluence*', '*loop.cloud.microsoft*'],
+    color: 'purple'
+  },
+  'AI & Copilot': {
+    patterns: ['*m365.cloud.microsoft*chat*', '*m365.cloud.microsoft*agent*', '*copilot*', 'chatgpt.com*', 'claude.ai*'],
+    color: 'orange'
+  },
+  'Email': {
+    patterns: ['outlook.office.com*', 'outlook.live.com*', 'mail.google.com*'],
+    color: 'yellow'
+  },
+  'Meetings & Chat': {
+    patterns: ['teams.microsoft.com*', 'zoom.us*', 'meet.google.com*', '*slack.com*'],
+    color: 'red'
+  },
+  'Dev Tools': {
+    patterns: ['localhost:*', '127.0.0.1:*', '*github.dev*', '*codespaces*', '*vscode.dev*'],
+    color: 'cyan'
+  },
+};
+
+const SCHEDULE_MINUTES = 60; // Default: every hour
+
+// ─── Initialization ──────────────────────────────────────────────────────────
+
+chrome.runtime.onInstalled.addListener(async () => {
+  // Set default config if first install
+  const existing = await chrome.storage.local.get(['rules', 'enabled', 'schedule']);
+  if (!existing.rules) {
+    await chrome.storage.local.set({
+      rules: DEFAULT_RULES,
+      enabled: true,
+      schedule: SCHEDULE_MINUTES,
+      collapseInactive: true,
+      ungroupedName: null, // null = don't group uncategorized tabs
+      focusTopics: [],
+      lastRun: null,
+    });
+  }
+
+  // Set up the recurring alarm
+  setupAlarm(existing.schedule || SCHEDULE_MINUTES);
+
+  // Create context menu
+  chrome.contextMenus.removeAll();
+  const rules = existing.rules || DEFAULT_RULES;
+  chrome.contextMenus.create({
+    id: 'herd-parent',
+    title: 'Herd: Add tab to category',
+    contexts: ['page'],
+  });
+  for (const name of Object.keys(rules)) {
+    chrome.contextMenus.create({
+      id: `herd-assign-${name}`,
+      parentId: 'herd-parent',
+      title: name,
+      contexts: ['page'],
+    });
+  }
+  chrome.contextMenus.create({
+    id: 'herd-assign-new',
+    parentId: 'herd-parent',
+    title: '+ New category...',
+    contexts: ['page'],
+  });
+
+  // Run immediately on install
+  await organizeTabs();
+});
+
+// ─── Context Menu (right-click tab → assign to category) ─────────────────────
+
+/**
+ * Generate a useful URL pattern from a full URL.
+ * Picks the most identifying path segment(s) rather than just the domain.
+ */
+// Examples:
+//   dev.azure.com/office/OC/_backlogs/... => *dev.azure.com/*/_backlogs*
+//   github.com/org/repo/pull/42           => *github.com/*/pull/*
+//   figma.com/design/abc/MyFile           => *figma.com/design/*
+function generatePattern(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace('www.', '');
+    const pathParts = parsed.pathname.split('/').filter(Boolean);
+
+    if (pathParts.length === 0) {
+      return `*${host}*`;
+    }
+
+    // Find the most identifying path segment (prefer ones starting with _ or known keywords)
+    const identifiers = ['pull', 'pullrequest', 'issues', 'merge_requests', '_backlogs',
+      '_boards', '_workitems', 'incidents', 'mail', 'chat', 'meeting', 'design',
+      'file', 'document', 'wiki', 'search', 'settings'];
+
+    // Check if any path segment is a known identifier
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i].toLowerCase();
+      if (identifiers.includes(part) || part.startsWith('_')) {
+        // Use host + wildcard + this segment
+        return `*${host}/*/${pathParts[i]}*`;
+      }
+    }
+
+    // For short paths (1-2 segments), use the first segment
+    if (pathParts.length <= 2) {
+      return `*${host}/${pathParts[0]}*`;
+    }
+
+    // For longer paths, use host + first 2 meaningful segments
+    return `*${host}/${pathParts[0]}/${pathParts[1]}*`;
+  } catch {
+    return `*${url}*`;
+  }
+}
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (!info.menuItemId.startsWith('herd-assign-')) return;
+
+  const categoryName = info.menuItemId.replace('herd-assign-', '');
+
+  if (categoryName === 'new') {
+    // Open options page for creating a new rule from this tab's URL
+    const pattern = generatePattern(tab.url);
+    chrome.runtime.openOptionsPage();
+    await chrome.storage.local.set({ pendingRuleDomain: pattern });
+    return;
+  }
+
+  // Add a smart pattern for this tab's URL to the selected category
+  const { rules } = await chrome.storage.local.get('rules');
+  if (!rules || !rules[categoryName]) return;
+
+  const pattern = generatePattern(tab.url);
+
+  if (!rules[categoryName].patterns.includes(pattern)) {
+    rules[categoryName].patterns.push(pattern);
+    await chrome.storage.local.set({ rules });
+    rebuildContextMenu(rules);
+  }
+
+  // Re-organize to apply immediately
+  await organizeTabs();
+});
+
+async function rebuildContextMenu(rules) {
+  await chrome.contextMenus.removeAll();
+  chrome.contextMenus.create({
+    id: 'herd-parent',
+    title: 'Herd: Add tab to category',
+    contexts: ['page'],
+  });
+  for (const name of Object.keys(rules)) {
+    chrome.contextMenus.create({
+      id: `herd-assign-${name}`,
+      parentId: 'herd-parent',
+      title: name,
+      contexts: ['page'],
+    });
+  }
+  chrome.contextMenus.create({
+    id: 'herd-assign-new',
+    parentId: 'herd-parent',
+    title: '+ New category...',
+    contexts: ['page'],
+  });
+}
+
+// ─── Alarm (scheduled runs) ─────────────────────────────────────────────────
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'herd-organize') {
+    const { enabled } = await chrome.storage.local.get('enabled');
+    if (enabled) await organizeTabs();
+  }
+});
+
+function setupAlarm(minutes) {
+  chrome.alarms.clear('herd-organize');
+  chrome.alarms.create('herd-organize', { periodInMinutes: minutes });
+}
+
+// ─── Message handling (from popup, options, or external) ─────────────────────
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.action === 'organize-now') {
+    organizeTabs().then(result => sendResponse(result));
+    return true;
+  }
+  if (msg.action === 'set-focus') {
+    chrome.storage.local.set({ focusTopics: msg.topics });
+    organizeTabs().then(result => sendResponse(result));
+    return true;
+  }
+  if (msg.action === 'get-status') {
+    getStatus().then(status => sendResponse(status));
+    return true;
+  }
+});
+
+// Allow external messages (from Copilot CLI bridge or other tools)
+chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
+  if (msg.action === 'set-context' && msg.focusTopics) {
+    chrome.storage.local.set({ focusTopics: msg.focusTopics });
+    organizeTabs().then(result => sendResponse(result));
+    return true;
+  }
+});
+
+// ─── Core: Organize Tabs ─────────────────────────────────────────────────────
+
+async function organizeTabs() {
+  const config = await chrome.storage.local.get(['rules', 'collapseInactive', 'ungroupedName', 'focusTopics', 'showNotification']);
+  const rules = config.rules || DEFAULT_RULES;
+  const focusTopics = config.focusTopics || [];
+
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  const results = [];
+  let totalGrouped = 0;
+  let totalTabs = 0;
+
+  for (const win of windows) {
+    const tabs = win.tabs.filter(t => !t.url.startsWith('chrome://') && !t.url.startsWith('edge://') && t.url !== 'about:blank');
+    totalTabs += tabs.length;
+    const result = await organizeWindow(win.id, tabs, rules, focusTopics, config);
+    totalGrouped += result.grouped;
+    results.push(result);
+  }
+
+  const timestamp = new Date().toISOString();
+  await chrome.storage.local.set({ lastRun: timestamp });
+
+  // Show notification (default: on, user can disable)
+  if (config.showNotification !== false && totalTabs > 0) {
+    const groupNames = results.flatMap(r => r.groupNames || []);
+    const uniqueGroups = [...new Set(groupNames)];
+    chrome.notifications.create('herd-organized', {
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: 'Tabs organized',
+      message: `${totalTabs} tabs → ${uniqueGroups.length} groups: ${uniqueGroups.slice(0, 4).join(', ')}${uniqueGroups.length > 4 ? '...' : ''}`,
+      priority: 0, // low priority = less intrusive
+    });
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => chrome.notifications.clear('herd-organized'), 4000);
+  }
+
+  return { success: true, windows: results.length, totalTabs, totalGrouped, timestamp };
+}
+
+async function organizeWindow(windowId, tabs, rules, focusTopics, config) {
+  // Step 1: Classify each tab
+  const classified = {};
+  const focusGroup = [];
+
+  for (const tab of tabs) {
+    // Check focus topics first
+    if (focusTopics.length > 0 && matchesFocus(tab, focusTopics)) {
+      focusGroup.push(tab.id);
+      continue;
+    }
+
+    const category = classifyTab(tab.url, rules);
+    if (category) {
+      if (!classified[category]) classified[category] = [];
+      classified[category].push(tab.id);
+    }
+    // If no category matches, leave tab ungrouped (cleaner than a catch-all)
+  }
+
+  // Step 2: Remove existing tab groups in this window that herd manages
+  // (We track which groups we created via title matching)
+  const existingGroups = await chrome.tabGroups.query({ windowId });
+  const herdGroupTitles = new Set([
+    ...Object.keys(rules),
+    ...(focusGroup.length > 0 ? ['Current Focus'] : []),
+  ]);
+
+  // Step 3: Apply tab groups
+  // Focus group first (if any)
+  const groupNames = [];
+
+  if (focusGroup.length > 0) {
+    await applyGroup(windowId, 'Current Focus', 'yellow', focusGroup, false);
+    groupNames.push('🎯 Current Focus');
+  }
+
+  // Category groups
+  for (const [category, tabIds] of Object.entries(classified)) {
+    if (tabIds.length === 0) continue;
+    const color = rules[category]?.color || 'grey';
+    const collapsed = config.collapseInactive && focusGroup.length > 0;
+    await applyGroup(windowId, category, color, tabIds, collapsed);
+    groupNames.push(category);
+  }
+
+  return { windowId, grouped: Object.keys(classified).length + (focusGroup.length > 0 ? 1 : 0), groupNames };
+}
+
+async function applyGroup(windowId, title, color, tabIds, collapsed) {
+  if (tabIds.length === 0) return;
+
+  try {
+    // Check if a group with this title already exists in this window
+    const existingGroups = await chrome.tabGroups.query({ windowId, title });
+    
+    if (existingGroups.length > 0) {
+      // Add tabs to existing group
+      await chrome.tabs.group({ tabIds, groupId: existingGroups[0].id });
+    } else {
+      // Create new group
+      const groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId } });
+      await chrome.tabGroups.update(groupId, { title, color: mapColor(color), collapsed });
+    }
+  } catch (err) {
+    console.warn(`herd: failed to group "${title}":`, err.message);
+  }
+}
+
+// ─── Classification Engine ───────────────────────────────────────────────────
+
+function classifyTab(url, rules) {
+  for (const [category, config] of Object.entries(rules)) {
+    for (const pattern of config.patterns || []) {
+      if (matchPattern(url, pattern)) return category;
+    }
+  }
+  return null;
+}
+
+function matchPattern(url, pattern) {
+  const normalizedUrl = url.replace(/^https?:\/\//, '').toLowerCase();
+  const normalizedPattern = pattern.replace(/^https?:\/\//, '').toLowerCase();
+
+  const regexStr = normalizedPattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*');
+
+  try {
+    return new RegExp(regexStr).test(normalizedUrl);
+  } catch {
+    return normalizedUrl.includes(normalizedPattern);
+  }
+}
+
+function matchesFocus(tab, topics) {
+  const title = (tab.title || '').toLowerCase();
+  const url = (tab.url || '').toLowerCase();
+  return topics.some(topic => {
+    const t = topic.toLowerCase();
+    return title.includes(t) || url.includes(t);
+  });
+}
+
+function mapColor(color) {
+  const valid = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+  return valid.includes(color) ? color : 'grey';
+}
+
+// ─── Status ──────────────────────────────────────────────────────────────────
+
+async function getStatus() {
+  const data = await chrome.storage.local.get(['enabled', 'lastRun', 'schedule', 'focusTopics']);
+  return {
+    enabled: data.enabled,
+    lastRun: data.lastRun,
+    schedule: data.schedule,
+    focusTopics: data.focusTopics || [],
+  };
+}
+
+// ─── Local Service Integration (poll for commands from MCP/HTTP) ─────────────
+
+const SERVICE_URL = 'http://127.0.0.1:9922';
+
+async function pollService() {
+  try {
+    const res = await fetch(`${SERVICE_URL}/ext/commands`);
+    if (res.status === 200) {
+      const commands = await res.json();
+      for (const cmd of commands) {
+        await handleServiceCommand(cmd);
+      }
+    }
+  } catch {
+    // Service not running, that's fine
+  }
+}
+
+async function handleServiceCommand(cmd) {
+  switch (cmd.action) {
+    case 'organize':
+      if (cmd.focusTopics) {
+        await chrome.storage.local.set({ focusTopics: cmd.focusTopics });
+      }
+      await organizeTabs();
+      break;
+
+    case 'set-focus':
+      await chrome.storage.local.set({ focusTopics: cmd.topics || [] });
+      await organizeTabs();
+      break;
+
+    case 'update-rules':
+      await chrome.storage.local.set({ rules: cmd.rules });
+      rebuildContextMenu(cmd.rules);
+      await organizeTabs();
+      break;
+  }
+}
+
+async function reportStateToService() {
+  try {
+    const data = await chrome.storage.local.get(['enabled', 'lastRun', 'schedule', 'focusTopics', 'rules']);
+    const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+    const tabs = [];
+    for (const win of windows) {
+      for (const tab of win.tabs) {
+        if (!tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
+          tabs.push({ id: tab.id, title: tab.title, url: tab.url, windowId: win.id });
+        }
+      }
+    }
+
+    await fetch(`${SERVICE_URL}/ext/state`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, tabs }),
+    });
+  } catch {
+    // Service not running
+  }
+}
+
+// Poll every 3 seconds for commands + report state
+setInterval(async () => {
+  await pollService();
+  await reportStateToService();
+}, 3000);

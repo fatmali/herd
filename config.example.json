@@ -1,0 +1,55 @@
+{
+  "browsers": [
+    { "name": "Edge", "port": 9222 },
+    { "name": "Chrome", "port": 9223 }
+  ],
+  "strategy": "activity-type",
+  "categories": {
+    "Code Review": {
+      "patterns": ["github.com/*/pull/", "dev.azure.com/*/pullrequest/", "*.visualstudio.com/*pullrequest*"],
+      "color": "green"
+    },
+    "Work Items": {
+      "patterns": ["dev.azure.com/*/workitems", "dev.azure.com/*/_boards", "*.visualstudio.com/*workitem*"],
+      "color": "blue"
+    },
+    "Incidents": {
+      "patterns": ["*microsofticm.com*", "*icm*incidents*"],
+      "color": "red"
+    },
+    "Design": {
+      "patterns": ["*figma.com*", "*canva.com*"],
+      "color": "pink"
+    },
+    "Documentation": {
+      "patterns": ["*wiki*", "docs.*", "notion.so", "learn.microsoft.com", "*loop.cloud.microsoft*"],
+      "color": "purple"
+    },
+    "AI & Copilot": {
+      "patterns": ["*m365.cloud.microsoft*chat*", "*m365.cloud.microsoft*agent*", "*copilot*", "*devui*"],
+      "color": "orange"
+    },
+    "Email": {
+      "patterns": ["outlook.office.com", "outlook.live.com", "mail.google.com"],
+      "color": "yellow"
+    },
+    "Meetings & Chat": {
+      "patterns": ["teams.microsoft.com", "zoom.us", "meet.google.com"],
+      "color": "red"
+    },
+    "Dev Tools": {
+      "patterns": ["localhost:*", "127.0.0.1:*", "*github.dev*", "*codespaces*", "*vscode.dev*"],
+      "color": "cyan"
+    },
+    "Search": {
+      "patterns": ["google.com/search", "bing.com/search", "duckduckgo.com", "*chromewebstore*"],
+      "color": "grey"
+    }
+  },
+  "closeStaleTabs": false,
+  "staleThresholdHours": 24,
+  "collapseInactiveGroups": true,
+  "useWorkContext": true,
+  "currentFocusColor": "yellow",
+  "ungroupedCategory": "Other"
+}

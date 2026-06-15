@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Herd - Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --white: #FFFFFF;
+      --bg: #FAFCFA;
+      --green: #22A65C;
+      --green-hover: #1B8F4E;
+      --green-subtle: rgba(34, 166, 92, 0.08);
+      --green-light: #E8F5EE;
+      --charcoal: #1A1A1A;
+      --grey: #6B7280;
+      --light-grey: #F3F4F6;
+      --border: #E5E7EB;
+      --danger: #EF4444;
+      --font-display: 'Fraunces', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 60px;
+      color: var(--charcoal);
+      background: var(--white);
+      min-height: 100vh;
+      position: relative;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      color: var(--charcoal);
+      animation: fadeUp 0.4s ease-out;
+    }
+
+    .subtitle {
+      color: var(--grey);
+      margin-top: 4px;
+      margin-bottom: 36px;
+      font-size: 14px;
+      animation: fadeUp 0.4s ease-out 0.05s both;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      animation: fadeUp 0.4s ease-out calc(var(--card-index, 0) * 0.08s + 0.1s) both;
+    }
+
+    .card h2 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      letter-spacing: -0.3px;
+    }
+
+    /* Rules list */
+    .rule-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--light-grey);
+      transition: background 0.15s;
+    }
+
+    .rule-row:last-child { border-bottom: none; }
+
+    .rule-row:hover {
+      background: var(--green-subtle);
+      margin: 0 -12px;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .color-dot {
+      width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .color-dot:hover {
+      transform: scale(1.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .rule-name {
+      font-weight: 600;
+      min-width: 130px;
+      cursor: pointer;
+      font-size: 13.5px;
+      transition: color 0.15s;
+    }
+
+    .rule-name:hover { color: var(--green); }
+
+    .rule-patterns {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--grey);
+      word-break: break-all;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .rule-patterns .pattern {
+      display: inline-block;
+      background: var(--light-grey);
+      padding: 3px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+
+    .rule-patterns .pattern:hover {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: var(--danger);
+      color: var(--danger);
+      text-decoration: line-through;
+    }
+
+    .rule-patterns .inline-add {
+      display: inline-block;
+      border: 1px dashed #ccc;
+      background: transparent;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      width: 130px;
+      color: #aaa;
+    }
+    .rule-patterns .inline-add:focus {
+      border-color: var(--primary);
+      outline: none;
+      color: #333;
+      background: #fff;
+    }
+
+    .rule-actions { flex-shrink: 0; }
+
+    .rule-actions button {
+      background: none; border: none; cursor: pointer;
+      color: var(--grey);
+      font-size: 18px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .rule-actions button:hover {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    /* Add rule form */
+    .add-rule-form {
+      display: grid;
+      grid-template-columns: 1fr 2fr auto auto;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--light-grey);
+      align-items: center;
+    }
+    .new-category-row input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    input, select {
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      background: var(--white);
+      color: var(--charcoal);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input::placeholder {
+      color: var(--grey);
+      opacity: 0.6;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-subtle);
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%236B7280' stroke-width='1.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-add {
+      background: var(--green);
+      color: var(--white);
+      box-shadow: 0 2px 6px rgba(34, 166, 92, 0.2);
+    }
+
+    .btn-add:hover {
+      background: var(--green-hover);
+      box-shadow: 0 3px 10px rgba(34, 166, 92, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-export {
+      background: var(--light-grey);
+      color: var(--charcoal);
+      border: 1px solid var(--border);
+    }
+
+    .btn-export:hover {
+      background: var(--border);
+      transform: translateY(-1px);
+    }
+
+    /* Settings rows */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--light-grey);
+    }
+
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-label {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .setting-label span {
+      display: block;
+      font-size: 11.5px;
+      color: var(--grey);
+      margin-top: 3px;
+      font-weight: 400;
+    }
+
+    .setting-row select {
+      min-width: 140px;
+    }
+
+    .setting-row input[type="checkbox"] {
+      width: 18px; height: 18px;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Empty state */
+    .rules-empty {
+      text-align: center;
+      padding: 24px;
+      color: var(--grey);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐑 herd settings</h1>
+  <p class="subtitle">Configure how your tabs get organized.</p>
+
+  <div class="card" style="--card-index: 1">
+    <h2>Categories &amp; Rules</h2>
+    <div id="rulesList"></div>
+    <div class="add-rule-form">
+      <input type="text" id="newCategoryName" placeholder="New category name">
+      <select id="newColor">
+        <option value="grey">Grey</option>
+        <option value="blue">Blue</option>
+        <option value="red">Red</option>
+        <option value="yellow">Yellow</option>
+        <option value="green">Green</option>
+        <option value="pink">Pink</option>
+        <option value="purple">Purple</option>
+        <option value="cyan">Cyan</option>
+        <option value="orange">Orange</option>
+      </select>
+      <button class="btn btn-add" id="addCategoryBtn">+ New Category</button>
+    </div>
+  </div>
+
+  <div class="card" style="--card-index: 2">
+    <h2>Schedule</h2>
+    <div class="setting-row">
+      <div class="setting-label">
+        Organize every
+        <span>How often to auto-group tabs</span>
+      </div>
+      <select id="scheduleSelect">
+        <option value="15">15 minutes</option>
+        <option value="30">30 minutes</option>
+        <option value="60" selected>1 hour</option>
+        <option value="120">2 hours</option>
+        <option value="0">Manual only</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">
+        Collapse inactive groups
+        <span>Minimize groups that don't match your current focus</span>
+      </div>
+      <input type="checkbox" id="collapseCheck" checked>
+    </div>
+  </div>
+
+  <div class="card" style="--card-index: 3">
+    <h2>Data</h2>
+    <div class="actions">
+      <button class="btn btn-export" id="exportBtn">Export Rules</button>
+      <button class="btn btn-export" id="importBtn">Import Rules</button>
+      <button class="btn btn-export" id="resetBtn">Reset to Defaults</button>
+    </div>
+  </div>
+
+  <div class="card" style="--card-index: 4">
+    <h2>Help</h2>
+    <p style="font-size: 14px; color: var(--grey); margin-bottom: 12px;">Learn how rules, patterns, focus topics, and scheduling work.</p>
+    <a href="help.html" class="btn btn-export" style="display: inline-block; text-align: center; text-decoration: none;">Open Full Guide →</a>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

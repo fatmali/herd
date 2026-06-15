@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Herd - Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --white: #FFFFFF;
+      --bg: #F8FAF8;
+      --green: #22A65C;
+      --green-hover: #1B8F4E;
+      --green-subtle: rgba(34, 166, 92, 0.06);
+      --green-light: #EDF8F2;
+      --charcoal: #1A1A1A;
+      --grey: #6B7280;
+      --grey-light: #9CA3AF;
+      --light-grey: #F3F4F6;
+      --border: #E5E7EB;
+      --amber-bg: #FFFBEB;
+      --amber: #D97706;
+      --font-display: 'Fraunces', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --sidebar-w: 220px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--charcoal);
+      background: var(--white);
+      min-height: 100vh;
+      line-height: 1.65;
+    }
+
+    /* ─── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: var(--sidebar-w);
+      height: 100vh;
+      padding: 28px 16px;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 8px;
+      margin-bottom: 24px;
+    }
+
+    .sidebar-brand span {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .sidebar-brand strong {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--charcoal);
+      letter-spacing: -0.3px;
+    }
+
+    .sidebar-nav {
+      list-style: none;
+      flex: 1;
+    }
+
+    .sidebar-nav li {
+      margin-bottom: 2px;
+    }
+
+    .sidebar-nav a {
+      display: block;
+      padding: 7px 12px;
+      color: var(--grey);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+
+    .sidebar-nav a:hover {
+      color: var(--charcoal);
+      background: var(--green-subtle);
+    }
+
+    .sidebar-nav a.active {
+      color: var(--green);
+      background: var(--green-subtle);
+      border-left-color: var(--green);
+    }
+
+    .sidebar-back {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sidebar-back a {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--grey);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .sidebar-back a:hover {
+      color: var(--green);
+      background: var(--green-subtle);
+    }
+
+    .sidebar-back svg {
+      width: 12px; height: 12px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Main Content ────────────────────────────────────── */
+    .main {
+      margin-left: var(--sidebar-w);
+      max-width: 680px;
+      padding: 40px 48px 80px;
+    }
+
+    /* Header */
+    .page-header {
+      margin-bottom: 36px;
+    }
+
+    .page-header h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      color: var(--charcoal);
+    }
+
+    .page-header p {
+      color: var(--grey);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section + .section {
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 12px;
+      color: var(--charcoal);
+    }
+
+    h3 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      margin: 20px 0 8px;
+      color: var(--charcoal);
+    }
+
+    p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: var(--charcoal);
+    }
+
+    strong { font-weight: 600; }
+
+    a { color: var(--green); }
+
+    /* ─── Code ────────────────────────────────────────────── */
+    code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--light-grey);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--charcoal);
+    }
+
+    pre {
+      background: #1E1E1E;
+      color: #D4D4D4;
+      padding: 16px 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 10px 0 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.75;
+      border: 1px solid #2D2D2D;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    /* ─── Tables ──────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      text-align: left;
+      font-weight: 600;
+      padding: 9px 14px;
+      background: var(--light-grey);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--grey);
+    }
+
+    td {
+      padding: 9px 14px;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    /* Color swatches */
+    .color-swatch {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* ─── Callouts ────────────────────────────────────────── */
+    .callout {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin: 14px 0;
+      font-size: 13px;
+      line-height: 1.55;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .callout-icon {
+      flex-shrink: 0;
+      font-size: 14px;
+      margin-top: 1px;
+    }
+
+    .callout-tip {
+      background: var(--green-light);
+      border: 1px solid rgba(34, 166, 92, 0.15);
+    }
+
+    .callout-warn {
+      background: var(--amber-bg);
+      border: 1px solid rgba(217, 119, 6, 0.15);
+    }
+
+    /* ─── Lists ───────────────────────────────────────────── */
+    ul, ol {
+      margin: 8px 0 14px 20px;
+      font-size: 14px;
+    }
+
+    li {
+      margin-bottom: 5px;
+      line-height: 1.55;
+    }
+
+    li::marker { color: var(--grey-light); }
+
+    /* ─── Definition Lists ────────────────────────────────── */
+    dl {
+      margin: 10px 0 14px;
+    }
+
+    dt {
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 12px;
+      color: var(--charcoal);
+    }
+
+    dd {
+      margin: 2px 0 0 0;
+      padding-left: 14px;
+      color: var(--grey);
+      font-size: 13px;
+      border-left: 2px solid var(--border);
+    }
+
+    /* ─── Animations ──────────────────────────────────────── */
+    .main > * {
+      animation: fadeIn 0.35s ease-out both;
+    }
+
+    .main > *:nth-child(1) { animation-delay: 0s; }
+    .main > *:nth-child(2) { animation-delay: 0.04s; }
+    .main > *:nth-child(3) { animation-delay: 0.08s; }
+    .main > *:nth-child(4) { animation-delay: 0.12s; }
+    .main > *:nth-child(5) { animation-delay: 0.16s; }
+    .main > *:nth-child(6) { animation-delay: 0.2s; }
+    .main > *:nth-child(7) { animation-delay: 0.24s; }
+    .main > *:nth-child(8) { animation-delay: 0.28s; }
+    .main > *:nth-child(9) { animation-delay: 0.32s; }
+    .main > *:nth-child(10) { animation-delay: 0.36s; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <span>🐑</span>
+      <strong>herd guide</strong>
+    </div>
+    <ol class="sidebar-nav">
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#rules">Rules &amp; Categories</a></li>
+      <li><a href="#patterns">URL Pattern Syntax</a></li>
+      <li><a href="#focus-topics">Focus Topics</a></li>
+      <li><a href="#colors">Colors</a></li>
+      <li><a href="#scheduling">Auto-Organize</a></li>
+      <li><a href="#context-menu">Right-Click Menu</a></li>
+      <li><a href="#tips">Tips &amp; Best Practices</a></li>
+    </ol>
+    <div class="sidebar-back">
+      <a href="options.html">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 12L6 8l4-4"/></svg>
+        Back to Settings
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="page-header">
+      <h1>Guide</h1>
+      <p>Everything you need to know about organizing your tabs with Herd.</p>
+    </header>
+
+    <!-- How It Works -->
+    <div class="section" id="how-it-works">
+      <h2>How It Works</h2>
+      <p>Herd organizes your browser tabs into <strong>tab groups</strong> — the colored, collapsible labels you see in Edge or Chrome. It works in three steps:</p>
+      <ol>
+        <li><strong>Scan</strong> — Looks at all open tabs across all windows.</li>
+        <li><strong>Classify</strong> — Matches each tab's URL against your rules. First match wins.</li>
+        <li><strong>Group</strong> — Places tabs into named, colored groups. Unmatched tabs stay ungrouped.</li>
+      </ol>
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <span>Herd never closes tabs or changes their order. It only assigns group labels and colors.</span>
+      </div>
+    </div>
+
+    <!-- Rules & Categories -->
+    <div class="section" id="rules">
+      <h2>Rules &amp; Categories</h2>
+      <p>A <strong>rule</strong> (category) is a named group with:</p>
+      <ul>
+        <li><strong>Name</strong> — the tab group title (e.g. "Code Review")</li>
+        <li><strong>URL patterns</strong> — if a tab's URL matches any pattern, it belongs here</li>
+        <li><strong>Color</strong> — the tab group color in the browser</li>
+      </ul>
+
+      <h3>Priority Order</h3>
+      <p>Rules are evaluated top-to-bottom. The <strong>first match wins</strong> — once matched, no further rules are checked.</p>
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠️</span>
+        <span>If you have overlapping patterns (e.g. <code>*github.com*</code> and <code>github.com/*/pull/*</code>), place the more specific rule first.</span>
+      </div>
+
+      <h3>Default Rules</h3>
+      <p>Herd ships with sensible defaults for common work activities:</p>
+      <table>
+        <tr><th>Category</th><th>Matches</th><th>Color</th></tr>
+        <tr><td>Code Review</td><td>GitHub PRs, ADO pull requests, GitLab MRs</td><td><span class="color-swatch" style="background:#34a853"></span>Green</td></tr>
+        <tr><td>Work Items</td><td>ADO boards, Jira, Linear</td><td><span class="color-swatch" style="background:#4285f4"></span>Blue</td></tr>
+        <tr><td>Incidents</td><td>ICM, PagerDuty, OpsGenie</td><td><span class="color-swatch" style="background:#ea4335"></span>Red</td></tr>
+        <tr><td>Design</td><td>Figma, Canva, Miro</td><td><span class="color-swatch" style="background:#e91e8a"></span>Pink</td></tr>
+        <tr><td>Documentation</td><td>Wikis, Notion, MS Learn, Confluence, Loop</td><td><span class="color-swatch" style="background:#9334e6"></span>Purple</td></tr>
+        <tr><td>AI &amp; Copilot</td><td>M365 Chat, ChatGPT, Claude</td><td><span class="color-swatch" style="background:#ff6d01"></span>Orange</td></tr>
+        <tr><td>Email</td><td>Outlook, Gmail</td><td><span class="color-swatch" style="background:#fbbc04"></span>Yellow</td></tr>
+        <tr><td>Meetings &amp; Chat</td><td>Teams, Zoom, Google Meet, Slack</td><td><span class="color-swatch" style="background:#ea4335"></span>Red</td></tr>
+        <tr><td>Dev Tools</td><td>localhost, Codespaces, vscode.dev</td><td><span class="color-swatch" style="background:#00bcd4"></span>Cyan</td></tr>
+      </table>
+      <p>Edit these on the <a href="options.html">Settings page</a>.</p>
+    </div>
+
+    <!-- URL Pattern Syntax -->
+    <div class="section" id="patterns">
+      <h2>URL Pattern Syntax</h2>
+      <p>Patterns use simple wildcard syntax. <code>*</code> matches any number of characters (including none).</p>
+
+      <h3>How Matching Works</h3>
+      <ol>
+        <li>The <code>https://</code> or <code>http://</code> prefix is stripped from both URL and pattern</li>
+        <li>Comparison is case-insensitive</li>
+        <li>Each <code>*</code> expands to match anything</li>
+      </ol>
+
+      <h3>Examples</h3>
+      <table>
+        <tr><th>Pattern</th><th>Matches</th><th>Doesn't Match</th></tr>
+        <tr><td><code>*github.com*</code></td><td>Any GitHub page</td><td>—</td></tr>
+        <tr><td><code>github.com/*/pull/*</code></td><td>GitHub PRs only</td><td>Issues, repos, profiles</td></tr>
+        <tr><td><code>*figma.com*</code></td><td>Any Figma page</td><td>—</td></tr>
+        <tr><td><code>localhost:*</code></td><td>Any localhost port</td><td>127.0.0.1</td></tr>
+        <tr><td><code>docs.*</code></td><td>docs.microsoft.com</td><td>learn.microsoft.com/docs</td></tr>
+        <tr><td><code>*myproject*</code></td><td>Any URL with "myproject"</td><td>—</td></tr>
+      </table>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <span>When in doubt, wrap with <code>*</code> on both sides: <code>*keyword*</code>. Matches the keyword anywhere in the URL.</span>
+      </div>
+
+      <h3>Common Patterns</h3>
+      <pre><code># Match a specific domain
+*example.com*
+
+# Match a specific path
+github.com/myorg/myrepo*
+
+# Match a subdomain
+*.staging.myapp.com*
+
+# Match multiple ports
+localhost:3000*
+localhost:8080*</code></pre>
+    </div>
+
+    <!-- Focus Topics -->
+    <div class="section" id="focus-topics">
+      <h2>Focus Topics</h2>
+      <p>Focus topics highlight tabs related to your current work. Matching tabs are pulled into a special <strong>"Current Focus"</strong> group (yellow) at the top.</p>
+
+      <h3>How It Works</h3>
+      <p>Topics match against both the tab <strong>title</strong> and <strong>URL</strong> as a case-insensitive substring.</p>
+      <pre><code># Focus topic: "auth-migration"
+# ✓ Title: "PR #4421 - Migrate auth-migration to MSAL"
+# ✓ URL:   "github.com/org/repo/issues?q=auth-migration"</code></pre>
+
+      <h3>Setting Focus Topics</h3>
+      <ul>
+        <li><strong>Popup</strong> — Type comma-separated topics in the Focus Topics field</li>
+        <li><strong>CLI</strong> — The herd service can set topics via WorkIQ based on your calendar</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <span>Use specific keywords: ticket numbers (<code>PROJ-1234</code>), branch names (<code>auth-migration</code>), or codenames. Avoid generic words like "meeting" that match too broadly.</span>
+      </div>
+
+      <h3>Focus vs. Rules</h3>
+      <p>Focus topics take <strong>priority over rules</strong>. A matching tab goes to "Current Focus" even if it also matches a category. Clear your topics to return tabs to normal groups.</p>
+    </div>
+
+    <!-- Colors -->
+    <div class="section" id="colors">
+      <h2>Colors</h2>
+      <p>Tab group colors are limited by the browser. Available options:</p>
+      <table>
+        <tr><th>Name</th><th>Swatch</th><th>Good For</th></tr>
+        <tr><td><code>grey</code></td><td><span class="color-swatch" style="background:#999"></span></td><td>Low-priority, "other"</td></tr>
+        <tr><td><code>blue</code></td><td><span class="color-swatch" style="background:#4285f4"></span></td><td>Work items, planning</td></tr>
+        <tr><td><code>red</code></td><td><span class="color-swatch" style="background:#ea4335"></span></td><td>Urgent, incidents</td></tr>
+        <tr><td><code>yellow</code></td><td><span class="color-swatch" style="background:#fbbc04"></span></td><td>Focus, attention</td></tr>
+        <tr><td><code>green</code></td><td><span class="color-swatch" style="background:#34a853"></span></td><td>Code review</td></tr>
+        <tr><td><code>pink</code></td><td><span class="color-swatch" style="background:#e91e8a"></span></td><td>Design, creative</td></tr>
+        <tr><td><code>purple</code></td><td><span class="color-swatch" style="background:#9334e6"></span></td><td>Documentation</td></tr>
+        <tr><td><code>cyan</code></td><td><span class="color-swatch" style="background:#00bcd4"></span></td><td>Dev tools</td></tr>
+        <tr><td><code>orange</code></td><td><span class="color-swatch" style="background:#ff6d01"></span></td><td>AI, external tools</td></tr>
+      </table>
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <span>Use distinct colors for categories you switch between often. Same-colored groups are harder to distinguish at a glance.</span>
+      </div>
+    </div>
+
+    <!-- Scheduling -->
+    <div class="section" id="scheduling">
+      <h2>Auto-Organize &amp; Scheduling</h2>
+      <p>Herd can run automatically. Configure in Settings → Schedule.</p>
+
+      <dl>
+        <dt>Auto-organize toggle (popup)</dt>
+        <dd>Master on/off. When off, only "Organize Now" triggers grouping.</dd>
+        <dt>Schedule interval (settings)</dt>
+        <dd>15 min, 30 min, 1 hour, 2 hours, or manual-only.</dd>
+        <dt>Collapse inactive groups</dt>
+        <dd>Minimizes groups not matching your current focus to reduce noise.</dd>
+      </dl>
+
+      <h3>When Does It Run?</h3>
+      <ul>
+        <li><strong>On install</strong> — immediately organizes existing tabs</li>
+        <li><strong>On schedule</strong> — at the configured interval</li>
+        <li><strong>On demand</strong> — via "Organize Now" in the popup</li>
+        <li><strong>After rule changes</strong> — when you assign a tab via right-click</li>
+      </ul>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="section" id="context-menu">
+      <h2>Right-Click Menu</h2>
+      <p>Quickly assign any page to a category:</p>
+      <ol>
+        <li>Right-click anywhere on the page</li>
+        <li>Hover <strong>"Herd: Add tab to category"</strong></li>
+        <li>Pick a category — or <strong>"+ New category..."</strong></li>
+      </ol>
+      <p>This adds the tab's domain as a pattern. For example, right-clicking <code>linear.app/myteam/issue/ENG-123</code> adds <code>*linear.app*</code>.</p>
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <span>This is the fastest way to teach Herd. Browse normally, spot an ungrouped tab, right-click → assign.</span>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="section" id="tips">
+      <h2>Tips &amp; Best Practices</h2>
+
+      <h3>Start broad, refine later</h3>
+      <p>Begin with <code>*github.com*</code>. As tabs get miscategorized, split into <code>github.com/*/pull/*</code> for PRs and <code>github.com/*/issues*</code> for issues.</p>
+
+      <h3>Use few categories</h3>
+      <p>5–8 is the sweet spot. Too many defeats the purpose. Let unmatched tabs stay ungrouped.</p>
+
+      <h3>Focus topics for deep work</h3>
+      <p>Type your topic in the popup before a focus session. Related tabs surface; everything else collapses.</p>
+
+      <h3>Export your rules</h3>
+      <p>Settings → Export. Share with teammates or keep a backup before experimenting.</p>
+
+      <h3>Multiple windows</h3>
+      <p>Each window is organized independently using the same rules.</p>
+    </div>
+  </div>
+
+  <script>
+    // Scroll spy
+    const sections = document.querySelectorAll('.section[id]');
+    const tocLinks = document.querySelectorAll('.sidebar-nav a');
+
+    function updateActiveLink() {
+      let current = '';
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= 80) current = section.id;
+      }
+      tocLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+      });
+    }
+
+    window.addEventListener('scroll', updateActiveLink, { passive: true });
+    updateActiveLink();
+  </script>
+</body>
+</html>

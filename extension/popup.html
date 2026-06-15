@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --white: #FFFFFF;
+      --bg: #FAFCFA;
+      --green: #22A65C;
+      --green-hover: #1B8F4E;
+      --green-subtle: rgba(34, 166, 92, 0.08);
+      --green-light: #E8F5EE;
+      --charcoal: #1A1A1A;
+      --grey: #6B7280;
+      --light-grey: #F3F4F6;
+      --border: #E5E7EB;
+      --danger: #EF4444;
+      --font-display: 'Fraunces', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 340px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--charcoal);
+      background: var(--white);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      padding: 18px 20px 14px;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--charcoal);
+      letter-spacing: -0.5px;
+    }
+
+    .header .subtitle {
+      font-size: 11px;
+      color: var(--grey);
+      margin-top: 1px;
+      letter-spacing: 0.2px;
+    }
+
+    /* Status bar */
+    .status {
+      padding: 10px 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(34, 166, 92, 0.15);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    .status-dot.off {
+      background: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(34, 166, 92, 0.15); }
+      50% { box-shadow: 0 0 0 5px rgba(34, 166, 92, 0.08); }
+    }
+
+    .status-text {
+      flex: 1;
+      color: var(--grey);
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+
+    /* Sections */
+    .section {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--grey);
+      letter-spacing: 1.2px;
+      margin-bottom: 10px;
+    }
+
+    /* Buttons */
+    button {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--white);
+      box-shadow: 0 2px 8px rgba(34, 166, 92, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--green-hover);
+      box-shadow: 0 4px 12px rgba(34, 166, 92, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 4px rgba(34, 166, 92, 0.2);
+    }
+
+    .btn-secondary {
+      background: var(--light-grey);
+      color: var(--charcoal);
+      margin-top: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    /* Toggle */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+
+    .toggle-row span {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 38px; height: 22px;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle .slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 22px;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .toggle .slider:before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .toggle input:checked + .slider {
+      background: var(--green);
+    }
+
+    .toggle input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+    /* Focus input */
+    .focus-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      background: var(--white);
+      color: var(--charcoal);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .focus-input::placeholder {
+      color: var(--grey);
+      opacity: 0.6;
+    }
+
+    .focus-input:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-subtle);
+    }
+
+    .focus-hint {
+      font-size: 10.5px;
+      color: var(--grey);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .ai-hint {
+      font-size: 10.5px;
+      color: var(--grey);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .ai-hint code {
+      background: var(--light-grey);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 10px;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 12px 20px;
+      text-align: center;
+    }
+
+    .footer a {
+      font-size: 11px;
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+      transition: opacity 0.2s;
+    }
+
+    .footer a:hover {
+      opacity: 0.7;
+    }
+
+    /* Entrance animations */
+    .header { animation: fadeDown 0.3s ease-out; }
+    .status { animation: fadeDown 0.3s ease-out 0.05s both; }
+    .section:nth-child(3) { animation: fadeDown 0.3s ease-out 0.1s both; }
+    .section:nth-child(4) { animation: fadeDown 0.3s ease-out 0.15s both; }
+    .section:nth-child(5) { animation: fadeDown 0.3s ease-out 0.2s both; }
+    .footer { animation: fadeDown 0.3s ease-out 0.25s both; }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-icon">🐑</div>
+    <div>
+      <h1>herd</h1>
+      <div class="subtitle">Your tabs, organized.</div>
+    </div>
+  </div>
+
+  <div class="status">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text" id="statusText">Loading...</div>
+  </div>
+
+  <div class="section">
+    <button class="btn-primary" id="organizeBtn">Organize Now</button>
+    <button class="btn-secondary" id="ungroupBtn">Ungroup All</button>
+  </div>
+
+  <div class="section">
+    <div class="toggle-row">
+      <span>Auto-organize</span>
+      <label class="toggle">
+        <input type="checkbox" id="enabledToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row">
+      <span>Show notification</span>
+      <label class="toggle">
+        <input type="checkbox" id="notifyToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="section" id="aiSection">
+    <div class="section-title">AI Agent</div>
+    <div class="toggle-row">
+      <span id="aiStatus">Checking...</span>
+      <span class="status-dot" id="aiDot"></span>
+    </div>
+    <div class="ai-hint" id="aiHint"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Focus Topics</div>
+    <input type="text" class="focus-input" id="focusInput" 
+      placeholder="auth-migration, sprint-review">
+    <div class="focus-hint">Comma-separated. Matching tabs get promoted to "Current Focus" group.</div>
+  </div>
+
+  <div class="footer">
+    <a href="#" id="optionsLink">Manage Rules &amp; Categories →</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

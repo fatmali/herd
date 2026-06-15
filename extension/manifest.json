@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Herd - Tab Organizer",
+  "version": "0.1.0",
+  "description": "Automatically groups your browser tabs by activity. Install and forget.",
+  "permissions": ["tabs", "tabGroups", "alarms", "storage", "contextMenus", "notifications"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Herd - Organize Tabs"
+  },
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
