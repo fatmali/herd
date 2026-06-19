@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Herd Tab Organizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: #1a1a1a;
+      background: #fafcfa;
+      line-height: 1.7;
+      padding: 48px 24px;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .updated { color: #6b7280; font-size: 13px; margin-bottom: 32px; }
+    .summary {
+      background: #e8f5ee;
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a6b3a;
+      margin-bottom: 32px;
+    }
+    h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 28px 0 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th { font-weight: 600; color: #374151; background: #f9fafb; }
+    .no-list { list-style: none; padding: 0; }
+    .no-list li {
+      padding: 6px 0;
+      font-size: 14px;
+    }
+    .no-list li::before { content: "\274C  "; }
+    p { font-size: 14px; margin-bottom: 12px; }
+    a { color: #22a65c; }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 13px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Herd Tab Organizer &mdash; Last updated June 2025</p>
+
+    <div class="summary">
+      Herd does <strong>not</strong> collect, transmit, or sell any user data. Everything stays on your device.
+    </div>
+
+    <h2>What Herd stores</h2>
+    <table>
+      <thead><tr><th>Data</th><th>Where</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Tab grouping rules</td><td>chrome.storage.local</td><td>Organize tabs by URL patterns</td></tr>
+        <tr><td>Herd names &amp; notes</td><td>chrome.storage.local</td><td>Let you label your tab groups</td></tr>
+        <tr><td>Tab thumbnails</td><td>chrome.storage.local</td><td>Visual context recovery</td></tr>
+        <tr><td>Extension preferences</td><td>chrome.storage.local</td><td>Remember your settings</td></tr>
+      </tbody>
+    </table>
+
+    <h2>What Herd does NOT do</h2>
+    <ul class="no-list">
+      <li>No analytics or telemetry</li>
+      <li>No data sent to external servers</li>
+      <li>No third-party SDKs or trackers</li>
+      <li>No account or sign-in required</li>
+      <li>No browsing history collected beyond active tab metadata</li>
+    </ul>
+
+    <h2>Optional AI bridge</h2>
+    <p>
+      If you install the optional local AI bridge, it runs a localhost-only server
+      on your machine. No data leaves your device &mdash; it communicates only between
+      the extension and a local process over <code>127.0.0.1</code>.
+    </p>
+
+    <h2>Permissions explained</h2>
+    <table>
+      <thead><tr><th>Permission</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>tabs</td><td>Read tab titles/URLs to organize and search them</td></tr>
+        <tr><td>tabGroups</td><td>Create and manage Chrome tab groups (&ldquo;herds&rdquo;)</td></tr>
+        <tr><td>storage</td><td>Save your rules, notes, and thumbnails locally</td></tr>
+        <tr><td>scripting</td><td>Inject the search overlay into the active tab</td></tr>
+        <tr><td>activeTab</td><td>Capture thumbnail of the tab you just left</td></tr>
+        <tr><td>alarms</td><td>Schedule periodic auto-organization</td></tr>
+        <tr><td>contextMenus</td><td>Right-click &ldquo;Move to herd&rdquo; menu</td></tr>
+        <tr><td>nativeMessaging</td><td>Connect to optional local AI bridge</td></tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      Questions? Open an issue on the <a href="https://github.com/fatmali/herd">GitHub repository</a>.
+    </div>
+  </div>
+</body>
+</html>
