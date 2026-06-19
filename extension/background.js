@@ -204,6 +204,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const { enabled } = await chrome.storage.local.get('enabled');
     if (enabled) await organizeTabs();
   }
+  if (alarm.name === 'herd-cleanup') {
+    await cleanupInactiveTabs();
+    await closeDuplicateTabs();
+  }
 });
 
 function setupAlarm(minutes) {
@@ -211,11 +215,138 @@ function setupAlarm(minutes) {
   chrome.alarms.create('herd-organize', { periodInMinutes: minutes });
 }
 
+// ─── Tab Cleanup (Park inactive tabs) ────────────────────────────────────────
+
+async function cleanupInactiveTabs(force = false) {
+  const config = await chrome.storage.local.get(['cleanupEnabled', 'cleanupDays', 'herdNotes']);
+  if (!force && !config.cleanupEnabled) return { closed: 0 };
+
+  const maxAge = (config.cleanupDays || 30) * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  // Get all tabs
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  const groups = await chrome.tabGroups.query({});
+  const notes = config.herdNotes || {};
+
+  // Build set of protected group IDs (groups with notes are never cleaned)
+  const protectedGroups = new Set();
+  for (const group of groups) {
+    if (notes[group.id] && notes[group.id].trim()) {
+      protectedGroups.add(group.id);
+    }
+  }
+
+  const tabsToClose = [];
+
+  for (const win of windows) {
+    const closeable = win.tabs.filter(t =>
+      !t.url.startsWith('chrome://') &&
+      !t.url.startsWith('edge://') &&
+      t.url !== 'about:blank' &&
+      !t.active &&
+      !t.pinned &&
+      !protectedGroups.has(t.groupId)
+    );
+
+    for (const tab of closeable) {
+      const age = now - (tab.lastAccessed || now);
+      if (age > maxAge) {
+        tabsToClose.push(tab);
+      }
+    }
+  }
+
+  if (tabsToClose.length === 0) return { closed: 0 };
+
+  // Park tabs before closing (save to recoverable list)
+  const { parkedTabs } = await chrome.storage.local.get('parkedTabs');
+  const parked = parkedTabs || [];
+
+  for (const tab of tabsToClose) {
+    parked.unshift({
+      url: tab.url,
+      title: tab.title,
+      parkedAt: now,
+      groupId: tab.groupId,
+    });
+  }
+
+  // Keep max 200 parked tabs
+  await chrome.storage.local.set({ parkedTabs: parked.slice(0, 200) });
+
+  // Close them
+  const ids = tabsToClose.map(t => t.id);
+  await chrome.tabs.remove(ids);
+
+  // Show notification
+  chrome.notifications.create('herd-cleanup-done', {
+    type: 'basic',
+    iconUrl: 'icons/icon128.png',
+    title: 'Herd — Cleanup complete',
+    message: `${ids.length} inactive tab${ids.length > 1 ? 's' : ''} parked. You can restore them from settings.`,
+  });
+
+  return { closed: ids.length };
+}
+
+// Close duplicate tabs (keep the most recently accessed one for each URL)
+async function closeDuplicateTabs() {
+  const config = await chrome.storage.local.get(['dedupeEnabled']);
+  if (!config.dedupeEnabled) return { closed: 0 };
+
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  const allTabs = windows.flatMap(w => w.tabs);
+
+  // Group tabs by URL
+  const urlMap = new Map();
+  for (const tab of allTabs) {
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url === 'about:blank') continue;
+    if (tab.pinned) continue;
+    if (!urlMap.has(tab.url)) urlMap.set(tab.url, []);
+    urlMap.get(tab.url).push(tab);
+  }
+
+  const dupes = [];
+  for (const [, tabs] of urlMap) {
+    if (tabs.length <= 1) continue;
+    // Keep the most recently accessed; close the rest
+    tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+    // Never close the active tab
+    const toClose = tabs.slice(1).filter(t => !t.active);
+    dupes.push(...toClose);
+  }
+
+  if (dupes.length === 0) return { closed: 0 };
+
+  await chrome.tabs.remove(dupes.map(t => t.id));
+
+  if (dupes.length > 0) {
+    chrome.notifications.create('herd-dedupe-done', {
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: 'Herd — Duplicates closed',
+      message: `${dupes.length} duplicate tab${dupes.length > 1 ? 's' : ''} closed.`,
+    });
+  }
+
+  return { closed: dupes.length };
+}
+
+// Run cleanup check every 6 hours
+chrome.alarms.create('herd-cleanup', { periodInMinutes: 360 });
+
 // ─── Message handling (from popup, options, or external) ─────────────────────
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'organize-now') {
     organizeTabs().then(result => sendResponse(result));
+    return true;
+  }
+  if (msg.action === 'cleanupNow') {
+    Promise.all([cleanupInactiveTabs(true), closeDuplicateTabs()]).then(([inactive, dupes]) => {
+      sendResponse({ closed: (inactive.closed || 0) + (dupes.closed || 0) });
+    });
     return true;
   }
   if (msg.action === 'set-focus') {
@@ -267,6 +398,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'activate-tab') {
     chrome.tabs.update(msg.tabId, { active: true });
     chrome.windows.update(msg.windowId, { focused: true });
+    sendResponse({ ok: true });
+    return true;
+  }
+  if (msg.action === 'get-parked-tabs') {
+    chrome.storage.local.get('parkedTabs').then(({ parkedTabs }) => {
+      sendResponse({ tabs: parkedTabs || [] });
+    });
+    return true;
+  }
+  if (msg.action === 'restore-parked-tab') {
+    chrome.storage.local.get('parkedTabs').then(({ parkedTabs }) => {
+      const parked = parkedTabs || [];
+      const updated = parked.filter((_, i) => i !== msg.index);
+      chrome.storage.local.set({ parkedTabs: updated });
+      chrome.tabs.create({ url: msg.url });
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+  if (msg.action === 'clear-parked-tabs') {
+    chrome.storage.local.set({ parkedTabs: [] });
     sendResponse({ ok: true });
     return true;
   }

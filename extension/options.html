@@ -342,6 +342,52 @@
   </div>
 
   <div class="card" style="--card-index: 2">
+    <h2>Cleanup</h2>
+    <div class="setting-row">
+      <div class="setting-label">
+        Close inactive tabs
+        <span>Automatically close tabs you haven't visited in a while. They're saved to a recoverable list.</span>
+      </div>
+      <input type="checkbox" id="cleanupCheck">
+    </div>
+    <div class="setting-row" id="cleanupDaysRow" style="display: none;">
+      <div class="setting-label">
+        Close after
+        <span>Tabs untouched for this many days will be parked and closed</span>
+      </div>
+      <select id="cleanupDays">
+        <option value="0.125">3 hours</option>
+        <option value="0.25">6 hours</option>
+        <option value="0.5">12 hours</option>
+        <option value="1">1 day</option>
+        <option value="2">2 days</option>
+        <option value="7">7 days</option>
+        <option value="14">14 days</option>
+        <option value="30" selected>30 days</option>
+        <option value="60">60 days</option>
+        <option value="90">90 days</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">
+        Close duplicate tabs
+        <span>Automatically close tabs with the same URL, keeping only the most recent one</span>
+      </div>
+      <input type="checkbox" id="dedupeCheck">
+    </div>
+    <div class="setting-row" id="cleanupNowRow" style="display: none;">
+      <div class="setting-label">
+        Run cleanup
+        <span>Close all inactive tabs now based on your threshold</span>
+      </div>
+      <button id="cleanupNowBtn" style="padding: 8px 16px; background: var(--green); color: white; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s;">Clean up now</button>
+    </div>
+    <p style="font-size: 12px; color: var(--grey); margin-top: 8px;">
+      Pinned tabs and tabs in herds with notes are never closed.
+    </p>
+  </div>
+
+  <div class="card" style="--card-index: 3">
     <h2>Schedule</h2>
     <div class="setting-row">
       <div class="setting-label">
@@ -365,7 +411,7 @@
     </div>
   </div>
 
-  <div class="card" style="--card-index: 3">
+  <div class="card" style="--card-index: 4">
     <h2>Data</h2>
     <div class="actions">
       <button class="btn btn-export" id="exportBtn">Export Rules</button>
@@ -374,7 +420,7 @@
     </div>
   </div>
 
-  <div class="card" style="--card-index: 4">
+  <div class="card" style="--card-index: 5">
     <h2>Help</h2>
     <p style="font-size: 14px; color: var(--grey); margin-bottom: 12px;">Learn how rules, patterns, colors, and scheduling work.</p>
     <a href="help.html" class="btn btn-export" style="display: inline-block; text-align: center; text-decoration: none;">Open Full Guide →</a>

@@ -13,8 +13,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportBtn = document.getElementById('exportBtn');
   const importBtn = document.getElementById('importBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const cleanupCheck = document.getElementById('cleanupCheck');
+  const cleanupDaysRow = document.getElementById('cleanupDaysRow');
+  const cleanupDays = document.getElementById('cleanupDays');
+  const cleanupNowRow = document.getElementById('cleanupNowRow');
+  const cleanupNowBtn = document.getElementById('cleanupNowBtn');
+  const dedupeCheck = document.getElementById('dedupeCheck');
 
-  let config = await chrome.storage.local.get(['rules', 'schedule', 'collapseInactive']);
+  let config = await chrome.storage.local.get(['rules', 'schedule', 'collapseInactive', 'cleanupEnabled', 'cleanupDays', 'dedupeEnabled']);
+
+  // Cleanup settings
+  cleanupCheck.checked = config.cleanupEnabled || false;
+  dedupeCheck.checked = config.dedupeEnabled || false;
+  cleanupDaysRow.style.display = cleanupCheck.checked ? '' : 'none';
+  cleanupNowRow.style.display = cleanupCheck.checked ? '' : 'none';
+  if (config.cleanupDays) cleanupDays.value = String(config.cleanupDays);
+
+  cleanupCheck.addEventListener('change', async () => {
+    await chrome.storage.local.set({ cleanupEnabled: cleanupCheck.checked });
+    cleanupDaysRow.style.display = cleanupCheck.checked ? '' : 'none';
+    cleanupNowRow.style.display = cleanupCheck.checked ? '' : 'none';
+  });
+
+  cleanupDays.addEventListener('change', async () => {
+    await chrome.storage.local.set({ cleanupDays: parseFloat(cleanupDays.value) });
+  });
+
+  dedupeCheck.addEventListener('change', async () => {
+    await chrome.storage.local.set({ dedupeEnabled: dedupeCheck.checked });
+  });
+
+  cleanupNowBtn.addEventListener('click', async () => {
+    cleanupNowBtn.disabled = true;
+    cleanupNowBtn.textContent = 'Cleaning…';
+    try {
+      const result = await chrome.runtime.sendMessage({ action: 'cleanupNow' });
+      if (result && result.closed > 0) {
+        cleanupNowBtn.textContent = `Done — ${result.closed} tab${result.closed > 1 ? 's' : ''} parked`;
+      } else {
+        cleanupNowBtn.textContent = 'Nothing to clean';
+      }
+    } catch (err) {
+      cleanupNowBtn.textContent = 'Error';
+    }
+    setTimeout(() => {
+      cleanupNowBtn.disabled = false;
+      cleanupNowBtn.textContent = 'Clean up now';
+    }, 4000);
+  });
 
   // Render rules
   function renderRules() {
