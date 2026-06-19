@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!data || (!data.timeline.length && !data.herds.length)) {
     content.innerHTML = `
       <div class="empty-state">
-        <div class="emoji">🐑</div>
+        <div class="emoji"><img src="icons/icon.svg" alt="Herd" style="width:32px;height:32px;"></div>
         <h2>No tabs to show</h2>
         <p>Open some tabs and organize them to see your herds here.</p>
       </div>
