@@ -68,3 +68,9 @@ Link to PRIVACY.md hosted on GitHub Pages or similar.
   stable extension ID on publish.
 - For local development with a stable ID, add back the key field (see git history
   commit `86b5200` for the value).
+
+## Icon Attribution
+
+[Sheep](https://iconscout.com/icons/sheep) by
+[Dhimas Ronggobramantyo](https://iconscout.com/contributors/vintagio) on
+[IconScout](https://iconscout.com)
