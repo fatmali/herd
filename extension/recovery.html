@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Herd — Where was I?</title>
+  <style>
+    :root {
+      --white: #FFFFFF;
+      --bg: #FAFBFA;
+      --green: #22A65C;
+      --green-soft: rgba(34, 166, 92, 0.08);
+      --green-mid: rgba(34, 166, 92, 0.15);
+      --charcoal: #1A1A1A;
+      --grey: #6B7280;
+      --grey-light: #9CA3AF;
+      --border: #F0F1F0;
+      --card-bg: #FFFFFF;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--charcoal);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Header */
+    .header {
+      padding: 32px 48px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-left h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .header-left .emoji {
+      font-size: 26px;
+    }
+
+    .header-subtitle {
+      font-size: 14px;
+      color: var(--grey);
+      font-weight: 400;
+    }
+
+    /* Timeline */
+    .timeline-section {
+      padding: 28px 48px 20px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--grey-light);
+      margin-bottom: 14px;
+    }
+
+    .timeline {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .timeline::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .timeline::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.08);
+      border-radius: 2px;
+    }
+
+    .timeline-card {
+      flex-shrink: 0;
+      width: 180px;
+      scroll-snap-align: start;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .timeline-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .timeline-card:first-child {
+      position: relative;
+    }
+
+    .timeline-card:first-child::before {
+      content: 'Most recent';
+      position: absolute;
+      top: -20px;
+      left: 0;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .timeline-thumb {
+      width: 100%;
+      height: 108px;
+      border-radius: 10px;
+      background: var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+
+    .timeline-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .timeline-thumb-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: var(--card-bg);
+    }
+
+    .timeline-thumb-fallback img {
+      width: 24px;
+      height: 24px;
+    }
+
+    .timeline-thumb-fallback span {
+      font-size: 10px;
+      color: var(--grey);
+      max-width: 90%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .timeline-meta {
+      padding: 8px 2px 0;
+    }
+
+    .timeline-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--charcoal);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: var(--grey-light);
+      margin-top: 2px;
+    }
+
+    /* Herds grid */
+    .herds-section {
+      padding: 12px 48px 48px;
+    }
+
+    .herds-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .herd-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .herd-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .herd-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .herd-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--charcoal);
+      border: none;
+      background: none;
+      outline: none;
+      padding: 0;
+      font-family: inherit;
+      cursor: text;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.2s;
+    }
+
+    .herd-name:hover {
+      border-bottom-color: var(--border);
+    }
+
+    .herd-name:focus {
+      border-bottom-color: var(--green);
+    }
+
+    .herd-tab-count {
+      font-size: 12px;
+      color: var(--grey-light);
+      font-weight: 400;
+    }
+
+    .herd-note {
+      display: block;
+      width: 100%;
+      border: none;
+      background: none;
+      outline: none;
+      font-size: 13px;
+      color: var(--grey);
+      font-family: inherit;
+      padding: 4px 0;
+      margin-bottom: 14px;
+      border-bottom: 1px dashed transparent;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .herd-note:hover {
+      border-bottom-color: var(--border);
+    }
+
+    .herd-note:focus {
+      border-bottom-color: var(--green);
+      color: var(--charcoal);
+    }
+
+    .herd-note::placeholder {
+      color: var(--grey-light);
+      font-style: italic;
+    }
+
+    .herd-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tab-card {
+      width: 160px;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+
+    .tab-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .tab-thumb {
+      width: 100%;
+      height: 96px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .tab-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .tab-thumb-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .tab-thumb-fallback img {
+      width: 20px;
+      height: 20px;
+      opacity: 0.6;
+    }
+
+    .tab-thumb-fallback span {
+      font-size: 9px;
+      color: var(--grey-light);
+      max-width: 85%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tab-meta {
+      padding: 6px 2px 0;
+    }
+
+    .tab-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--charcoal);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-time {
+      font-size: 10px;
+      color: var(--grey-light);
+      margin-top: 1px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--grey);
+    }
+
+    .empty-state .emoji {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--charcoal);
+      margin-bottom: 8px;
+    }
+
+    /* Color map */
+    .color-grey { background: #9CA3AF; }
+    .color-blue { background: #4285f4; }
+    .color-red { background: #ea4335; }
+    .color-yellow { background: #fbbc04; }
+    .color-green { background: #34a853; }
+    .color-pink { background: #e91e8a; }
+    .color-purple { background: #9334e6; }
+    .color-cyan { background: #00bcd4; }
+    .color-orange { background: #ff6d01; }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 50vh;
+      color: var(--grey-light);
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header, .timeline-section, .herds-section {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+      .tab-card { width: 140px; }
+      .timeline-card { width: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <span class="emoji">🐑</span>
+      <div>
+        <h1>Where was I?</h1>
+        <div class="header-subtitle">Your tabs, as you left them.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="loading">Loading your herds...</div>
+  </div>
+
+  <script src="recovery.js"></script>
+</body>
+</html>

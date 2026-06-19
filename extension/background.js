@@ -232,6 +232,39 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ ok: true });
     return true;
   }
+  if (msg.action === 'get-recovery-data') {
+    getRecoveryData().then(data => sendResponse(data));
+    return true;
+  }
+  if (msg.action === 'get-thumbnail') {
+    chrome.storage.local.get(`thumb_${msg.tabId}`).then(result => {
+      sendResponse({ dataUrl: result[`thumb_${msg.tabId}`] || null });
+    });
+    return true;
+  }
+  if (msg.action === 'save-herd-note') {
+    chrome.storage.local.get('herdNotes').then(({ herdNotes }) => {
+      const notes = herdNotes || {};
+      notes[msg.herdId] = msg.note;
+      chrome.storage.local.set({ herdNotes: notes });
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+  if (msg.action === 'rename-herd') {
+    chrome.tabGroups.update(msg.groupId, { title: msg.name }).then(() => {
+      sendResponse({ ok: true });
+    }).catch(err => {
+      sendResponse({ ok: false, error: err.message });
+    });
+    return true;
+  }
+  if (msg.action === 'activate-tab') {
+    chrome.tabs.update(msg.tabId, { active: true });
+    chrome.windows.update(msg.windowId, { focused: true });
+    sendResponse({ ok: true });
+    return true;
+  }
 });
 
 // External messaging removed for security — use the MCP service bridge instead
@@ -242,10 +275,8 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (command === 'open-search') {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!activeTab || activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('edge://')) {
-      // Can't inject into browser pages — open search in a new tab instead
       return;
     }
-    // Inject search overlay into the active tab
     try {
       await chrome.scripting.executeScript({
         target: { tabId: activeTab.id },
@@ -253,6 +284,17 @@ chrome.commands.onCommand.addListener(async (command) => {
       });
     } catch (err) {
       console.log('herd: Could not inject search into this tab:', err.message);
+    }
+  }
+
+  if (command === 'open-recovery') {
+    // Open or focus existing recovery tab
+    const existing = await chrome.tabs.query({ url: chrome.runtime.getURL('recovery.html') });
+    if (existing.length > 0) {
+      chrome.tabs.update(existing[0].id, { active: true });
+      chrome.windows.update(existing[0].windowId, { focused: true });
+    } else {
+      chrome.tabs.create({ url: 'recovery.html' });
     }
   }
 });
@@ -284,6 +326,123 @@ async function getSearchableTabs() {
   // Sort by most recently accessed
   tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
   return tabs;
+}
+
+// ─── Thumbnail Capture ────────────────────────────────────────────────────────
+
+// Capture the visible tab when the user switches away from it
+let lastActiveTabId = null;
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  // Capture the tab we're LEAVING (the previous active tab)
+  if (lastActiveTabId && lastActiveTabId !== activeInfo.tabId) {
+    await captureThumbnail(lastActiveTabId, activeInfo.windowId);
+  }
+  lastActiveTabId = activeInfo.tabId;
+});
+
+async function captureThumbnail(tabId, windowId) {
+  try {
+    const dataUrl = await chrome.tabs.captureVisibleTab(windowId, {
+      format: 'jpeg',
+      quality: 50,
+    });
+    // Store by tabId and also by URL for persistence
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    if (!tab) return;
+
+    const key = `thumb_${tabId}`;
+    const store = { [key]: dataUrl };
+
+    // Also store by URL (fallback for after restart)
+    if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
+      store[`thumburl_${hashUrl(tab.url)}`] = dataUrl;
+    }
+
+    await chrome.storage.local.set(store);
+  } catch {
+    // Can't capture (browser page, devtools, etc.) — skip silently
+  }
+}
+
+function hashUrl(url) {
+  // Simple hash for URL-based thumbnail lookup
+  let hash = 0;
+  for (let i = 0; i < url.length; i++) {
+    hash = ((hash << 5) - hash + url.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+// Clean up thumbnails when tabs close
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.storage.local.remove(`thumb_${tabId}`);
+});
+
+// ─── Recovery Screen Data ─────────────────────────────────────────────────────
+
+async function getRecoveryData() {
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  const groups = await chrome.tabGroups.query({});
+  const groupMap = {};
+  for (const g of groups) {
+    groupMap[g.id] = { title: g.title || '', color: g.color || 'grey', id: g.id };
+  }
+
+  // Get herd notes
+  const { herdNotes } = await chrome.storage.local.get('herdNotes');
+  const notes = herdNotes || {};
+
+  // Build herds
+  const herds = {};
+  const allTabs = [];
+
+  for (const win of windows) {
+    for (const tab of win.tabs) {
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) continue;
+      if (tab.url === chrome.runtime.getURL('recovery.html')) continue;
+
+      const tabData = {
+        id: tab.id,
+        title: tab.title || '',
+        url: tab.url || '',
+        favIconUrl: tab.favIconUrl || '',
+        windowId: win.id,
+        groupId: tab.groupId,
+        lastAccessed: tab.lastAccessed || 0,
+        index: tab.index,
+      };
+
+      allTabs.push(tabData);
+
+      const herdKey = tab.groupId !== -1 ? `group_${tab.groupId}` : 'ungrouped';
+      if (!herds[herdKey]) {
+        const group = groupMap[tab.groupId];
+        herds[herdKey] = {
+          id: herdKey,
+          groupId: tab.groupId,
+          name: group ? group.title : 'Ungrouped',
+          color: group ? group.color : 'grey',
+          tabs: [],
+          note: notes[herdKey] || '',
+        };
+      }
+      herds[herdKey].tabs.push(tabData);
+    }
+  }
+
+  // Sort timeline by most recent
+  allTabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
+
+  return {
+    timeline: allTabs.slice(0, 20),
+    herds: Object.values(herds).sort((a, b) => {
+      // Herds with recent activity first
+      const aRecent = Math.max(...a.tabs.map(t => t.lastAccessed));
+      const bRecent = Math.max(...b.tabs.map(t => t.lastAccessed));
+      return bRecent - aRecent;
+    }),
+  };
 }
 
 // ─── Core: Organize Tabs ─────────────────────────────────────────────────────

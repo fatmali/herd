@@ -20,6 +20,13 @@
         "mac": "Command+Shift+H"
       },
       "description": "Search across all open tabs"
+    },
+    "open-recovery": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+L",
+        "mac": "Command+Shift+L"
+      },
+      "description": "Open context recovery screen"
     }
   },
   "options_page": "options.html",
