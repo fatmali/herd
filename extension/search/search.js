@@ -308,7 +308,7 @@
   // ─── Fuzzy Matching ──────────────────────────────────────────────────────────
 
   function fuzzyScore(query, text) {
-    if (!text) return 0;
+    if (!query || !text) return 0;
     const q = query.toLowerCase();
     const t = text.toLowerCase();
 

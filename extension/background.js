@@ -453,6 +453,7 @@ function connectNativeBridge() {
     nativePort = chrome.runtime.connectNative(NATIVE_HOST);
 
     nativePort.onMessage.addListener((msg) => {
+      if (chrome.runtime.lastError) return; // suppress
       if (msg.type === 'command') {
         handleBridgeCommand(msg);
       } else if (msg.type === 'bridge-ready') {
@@ -462,19 +463,19 @@ function connectNativeBridge() {
     });
 
     nativePort.onDisconnect.addListener(() => {
+      // Must read lastError to suppress the "unchecked" warning
+      const err = chrome.runtime.lastError;
       bridgeConnected = false;
       nativePort = null;
-      // Retry connection after 30 seconds
-      setTimeout(connectNativeBridge, 30000);
+      // Retry connection after 60 seconds
+      setTimeout(connectNativeBridge, 60000);
     });
 
-    // Send initial state (port may disconnect immediately if forbidden)
     bridgeConnected = true;
     sendStateToBridge();
   } catch (err) {
     bridgeConnected = false;
     nativePort = null;
-    // Native host not installed — extension works standalone
     console.log('herd: Native bridge not available (standalone mode)');
   }
 }
@@ -482,29 +483,35 @@ function connectNativeBridge() {
 async function sendStateToBridge() {
   if (!nativePort) return;
 
-  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
-  const tabs = [];
-  for (const win of windows) {
-    for (const tab of win.tabs) {
-      if (!tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
-        tabs.push({ id: tab.id, title: tab.title, url: tab.url, windowId: win.id });
+  try {
+    const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+    const tabs = [];
+    for (const win of windows) {
+      for (const tab of win.tabs) {
+        if (!tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
+          tabs.push({ id: tab.id, title: tab.title, url: tab.url, windowId: win.id });
+        }
       }
     }
+
+    const config = await chrome.storage.local.get(['rules', 'enabled', 'lastRun', 'focusTopics', 'schedule']);
+
+    nativePort.postMessage({
+      type: 'state-update',
+      data: {
+        tabs,
+        rules: config.rules || DEFAULT_RULES,
+        enabled: config.enabled !== false,
+        lastRun: config.lastRun,
+        focusTopics: config.focusTopics || [],
+        schedule: config.schedule || SCHEDULE_MINUTES,
+      },
+    });
+  } catch {
+    // Port disconnected — ignore
+    bridgeConnected = false;
+    nativePort = null;
   }
-
-  const config = await chrome.storage.local.get(['rules', 'enabled', 'lastRun', 'focusTopics', 'schedule']);
-
-  nativePort.postMessage({
-    type: 'state-update',
-    data: {
-      tabs,
-      rules: config.rules || DEFAULT_RULES,
-      enabled: config.enabled !== false,
-      lastRun: config.lastRun,
-      focusTopics: config.focusTopics || [],
-      schedule: config.schedule || SCHEDULE_MINUTES,
-    },
-  });
 }
 
 async function handleBridgeCommand(msg) {
