@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Herd - Tab Organizer",
-  "version": "0.1.0",
-  "description": "Automatically groups your browser tabs by activity. Install and forget.",
-  "permissions": ["tabs", "tabGroups", "alarms", "storage", "contextMenus", "nativeMessaging"],
+  "version": "0.2.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz2D78jLk35B/6RXbz6pkiWRCH1yjnLruebKoiq5nVFk0X9UO3v+qsKofD+RnaDfYN/3Sq3mHTcSPqF79V3dOFEAueZ8hgBDjrzxYvMQlccli+t1j6aPrQNxKRMQpu/HTTQf4MRkMLtUM+lcA5P9Q3GP0BjNv6a51wYRwTq/bxkNK5FRuBjV1O53EpyuPxQ8LIh3zn80/rcjOCFO1I1nhzdMngV54alXS69/aR9VLE4M2agb5fpi5BL+aRihMGNllB6FEvMufhDxh4EnfrQZZf0j5gIu2m5vI7NZJakry7k8C7Oj1CjrOGjs8XG55TIsltaQIEMtr5SksidIn923EFQIDAQAB",
+  "description": "Organize tabs into herds. Search, recover context, and never lose where you were.",
+  "permissions": ["tabs", "tabGroups", "alarms", "storage", "contextMenus", "nativeMessaging", "scripting", "activeTab"],
   "optional_permissions": ["notifications"],
   "background": {
     "service_worker": "background.js"
@@ -11,6 +12,15 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "Herd - Organize Tabs"
+  },
+  "commands": {
+    "open-search": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+H",
+        "mac": "Command+Shift+H"
+      },
+      "description": "Search across all open tabs"
+    }
   },
   "options_page": "options.html",
   "icons": {

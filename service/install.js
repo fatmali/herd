@@ -102,16 +102,8 @@ function install() {
     description: 'Herd tab organizer - AI bridge',
     path: hostPath,
     type: 'stdio',
-    allowed_origins: [],
+    allowed_origins: ['chrome-extension://cpbdlpjkeeejcbpkldgcikcnofcgkpfe/'],
   };
-
-  // We'll add the extension ID later when the user provides it,
-  // or use a wildcard during development
-  // For now, allow all chrome-extension origins (dev mode)
-  // In production, this gets locked to the published extension ID
-  manifest.allowed_origins = [
-    'chrome-extension://*/', // Dev mode - accepts any extension
-  ];
 
   fs.writeFileSync(MANIFEST_FILE, JSON.stringify(manifest, null, 2));
   console.log('  ✓ Created native messaging manifest');

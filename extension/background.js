@@ -222,9 +222,69 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     getStatus().then(status => sendResponse(status));
     return true;
   }
+  if (msg.action === 'search-get-tabs') {
+    getSearchableTabs().then(tabs => sendResponse({ tabs }));
+    return true;
+  }
+  if (msg.action === 'search-activate-tab') {
+    chrome.tabs.update(msg.tabId, { active: true });
+    chrome.windows.update(msg.windowId, { focused: true });
+    sendResponse({ ok: true });
+    return true;
+  }
 });
 
 // External messaging removed for security — use the MCP service bridge instead
+
+// ─── Search: Keyboard Shortcut + Tab Data ────────────────────────────────────
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'open-search') {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab || activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('edge://')) {
+      // Can't inject into browser pages — open search in a new tab instead
+      return;
+    }
+    // Inject search overlay into the active tab
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        files: ['search/search.js'],
+      });
+    } catch (err) {
+      console.log('herd: Could not inject search into this tab:', err.message);
+    }
+  }
+});
+
+async function getSearchableTabs() {
+  const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
+  const groups = await chrome.tabGroups.query({});
+  const groupMap = {};
+  for (const g of groups) {
+    groupMap[g.id] = g.title || '';
+  }
+
+  const tabs = [];
+  for (const win of windows) {
+    for (const tab of win.tabs) {
+      if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://')) continue;
+      tabs.push({
+        id: tab.id,
+        title: tab.title || '',
+        url: tab.url || '',
+        favIconUrl: tab.favIconUrl || '',
+        windowId: win.id,
+        herdName: tab.groupId !== -1 ? (groupMap[tab.groupId] || '') : '',
+        lastAccessed: tab.lastAccessed || 0,
+      });
+    }
+  }
+
+  // Sort by most recently accessed
+  tabs.sort((a, b) => b.lastAccessed - a.lastAccessed);
+  return tabs;
+}
 
 // ─── Core: Organize Tabs ─────────────────────────────────────────────────────
 
@@ -391,14 +451,12 @@ let bridgeConnected = false;
 function connectNativeBridge() {
   try {
     nativePort = chrome.runtime.connectNative(NATIVE_HOST);
-    bridgeConnected = true;
 
     nativePort.onMessage.addListener((msg) => {
       if (msg.type === 'command') {
         handleBridgeCommand(msg);
       } else if (msg.type === 'bridge-ready') {
         bridgeConnected = true;
-        // Send current state to bridge
         sendStateToBridge();
       }
     });
@@ -410,10 +468,12 @@ function connectNativeBridge() {
       setTimeout(connectNativeBridge, 30000);
     });
 
-    // Send initial state
+    // Send initial state (port may disconnect immediately if forbidden)
+    bridgeConnected = true;
     sendStateToBridge();
   } catch (err) {
     bridgeConnected = false;
+    nativePort = null;
     // Native host not installed — extension works standalone
     console.log('herd: Native bridge not available (standalone mode)');
   }

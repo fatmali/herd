@@ -123,7 +123,7 @@ function sendCommand(action, params = {}) {
 
 const server = http.createServer((req, res) => {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -250,8 +250,8 @@ server.listen(SERVICE_PORT, '127.0.0.1', () => {
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     logError(`Port ${SERVICE_PORT} in use. Another bridge running?`);
-    // Still stay alive for native messaging even if HTTP fails
-    sendToExtension({ type: 'bridge-error', error: 'Port in use' });
+    // Exit cleanly — the other instance is handling HTTP
+    process.exit(0);
   } else {
     logError('Server error:', err.message);
   }
