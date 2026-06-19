@@ -214,7 +214,10 @@
   <script>
     document.getElementById('closeWelcome').addEventListener('click', (e) => {
       e.preventDefault();
-      window.close();
+      // Navigate to the new tab page (window.close() only works on script-opened tabs)
+      chrome.tabs.getCurrent((tab) => {
+        if (tab) chrome.tabs.remove(tab.id);
+      });
     });
   </script>
 </body>
