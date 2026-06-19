@@ -223,51 +223,72 @@
     /* Quick actions */
     .quick-actions {
       display: flex;
-      gap: 8px;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .quick-action {
-      flex: 1;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      background: var(--light-grey);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       text-decoration: none;
     }
 
     .quick-action:hover {
-      background: var(--green-subtle);
       border-color: var(--green);
+      background: var(--green-subtle);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(34, 166, 92, 0.1);
     }
 
     .quick-action-icon {
-      font-size: 15px;
-      line-height: 1;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--green-light);
+      border-radius: 8px;
+      flex-shrink: 0;
     }
 
-    .quick-action-text {
+    .quick-action-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--green);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .quick-action-body {
       flex: 1;
       min-width: 0;
     }
 
     .quick-action-label {
-      font-size: 12px;
+      font-family: var(--font-body);
+      font-size: 13px;
       font-weight: 600;
       color: var(--charcoal);
-      display: block;
     }
 
     .quick-action-shortcut {
-      font-size: 9.5px;
-      color: var(--grey);
       font-family: var(--font-mono);
-      display: block;
-      margin-top: 1px;
+      font-size: 10px;
+      color: var(--grey);
+      padding: 1px 5px;
+      background: var(--light-grey);
+      border-radius: 3px;
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
     /* Footer */
@@ -325,18 +346,22 @@
   <div class="section">
     <div class="quick-actions">
       <a class="quick-action" id="searchLink">
-        <span class="quick-action-icon">🔍</span>
-        <span class="quick-action-text">
-          <span class="quick-action-label">Search</span>
-          <span class="quick-action-shortcut">Ctrl+Shift+H</span>
+        <span class="quick-action-icon">
+          <svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17" y2="17"/></svg>
         </span>
+        <span class="quick-action-body">
+          <span class="quick-action-label">Search</span>
+        </span>
+        <span class="quick-action-shortcut">Ctrl+Shift+H</span>
       </a>
       <a class="quick-action" id="recoveryLink">
-        <span class="quick-action-icon">🧭</span>
-        <span class="quick-action-text">
-          <span class="quick-action-label">Where was I?</span>
-          <span class="quick-action-shortcut">Ctrl+Shift+L</span>
+        <span class="quick-action-icon">
+          <svg viewBox="0 0 20 20"><polyline points="4 8 4 4 8 4"/><path d="M4 4l5 5"/><circle cx="11" cy="11" r="6"/><polyline points="11 8 11 11 13 13"/></svg>
         </span>
+        <span class="quick-action-body">
+          <span class="quick-action-label">Recall</span>
+        </span>
+        <span class="quick-action-shortcut">Ctrl+Shift+L</span>
       </a>
     </div>
   </div>
