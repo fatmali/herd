@@ -49,7 +49,7 @@ const SCHEDULE_MINUTES = 60; // Default: every hour
 
 // ─── Initialization ──────────────────────────────────────────────────────────
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   // Set default config if first install
   const existing = await chrome.storage.local.get(['rules', 'enabled', 'schedule']);
   if (!existing.rules) {
@@ -62,6 +62,11 @@ chrome.runtime.onInstalled.addListener(async () => {
       focusTopics: [],
       lastRun: null,
     });
+  }
+
+  // Show welcome page on first install (not on updates)
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: 'welcome.html' });
   }
 
   // Set up the recurring alarm
@@ -749,24 +754,6 @@ async function getStatus() {
   };
 }
 
-// ─── Local Service Integration (poll for commands from MCP/HTTP) ─────────────
-
-const SERVICE_URL = 'http://127.0.0.1:9922';
-
-async function pollService() {
-  try {
-    const res = await fetch(`${SERVICE_URL}/ext/commands`);
-    if (res.status === 200) {
-      const commands = await res.json();
-      for (const cmd of commands) {
-        await handleServiceCommand(cmd);
-      }
-    }
-  } catch {
-    // Service not running, that's fine
-  }
-}
-
 // ─── Validation ──────────────────────────────────────────────────────────────
 
 const VALID_COLORS = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
@@ -779,7 +766,6 @@ function validateRules(rules) {
   const keys = Object.keys(rules);
   if (keys.length > MAX_CATEGORIES) return false;
   for (const key of keys) {
-    // Block prototype pollution
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') return false;
     const cat = rules[key];
     if (!cat || typeof cat !== 'object' || Array.isArray(cat)) return false;
@@ -792,100 +778,3 @@ function validateRules(rules) {
   }
   return true;
 }
-
-async function handleServiceCommand(cmd) {
-  switch (cmd.action) {
-    case 'organize':
-      if (cmd.focusTopics) {
-        await chrome.storage.local.set({ focusTopics: cmd.focusTopics });
-      }
-      await organizeTabs();
-      break;
-
-    case 'set-focus':
-      await chrome.storage.local.set({ focusTopics: cmd.topics || [] });
-      await organizeTabs();
-      break;
-
-    case 'update-rules':
-      if (validateRules(cmd.rules)) {
-        await chrome.storage.local.set({ rules: cmd.rules });
-        rebuildContextMenu(cmd.rules);
-        await organizeTabs();
-      }
-      break;
-
-    case 'request-state':
-      // Service explicitly requests state — respond on next poll
-      pendingStateReport = true;
-      break;
-  }
-}
-
-let pendingStateReport = false;
-let serviceToken = null;
-
-async function loadServiceToken() {
-  // Try to read token from storage (user configures in options)
-  const { herdServiceToken } = await chrome.storage.local.get('herdServiceToken');
-  serviceToken = herdServiceToken || null;
-}
-
-loadServiceToken();
-chrome.storage.onChanged.addListener((changes) => {
-  if (changes.herdServiceToken) {
-    serviceToken = changes.herdServiceToken.newValue || null;
-  }
-});
-
-async function pollService() {
-  if (!serviceToken) return; // Don't poll without auth
-  try {
-    const res = await fetch(`${SERVICE_URL}/ext/commands`, {
-      headers: { 'X-Herd-Token': serviceToken },
-    });
-    if (res.status === 200) {
-      const commands = await res.json();
-      for (const cmd of commands) {
-        await handleServiceCommand(cmd);
-      }
-    }
-  } catch {
-    // Service not running, that's fine
-  }
-
-  // Only report state when explicitly requested (pull model)
-  if (pendingStateReport) {
-    pendingStateReport = false;
-    await reportStateToService();
-  }
-}
-
-async function reportStateToService() {
-  if (!serviceToken) return;
-  try {
-    const data = await chrome.storage.local.get(['enabled', 'lastRun', 'schedule', 'focusTopics', 'rules']);
-    const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['normal'] });
-    const tabs = [];
-    for (const win of windows) {
-      for (const tab of win.tabs) {
-        if (!tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
-          // Strip query strings and fragments to avoid leaking tokens/session IDs
-          const cleanUrl = tab.url.split('?')[0].split('#')[0];
-          tabs.push({ id: tab.id, title: tab.title, url: cleanUrl, windowId: win.id });
-        }
-      }
-    }
-
-    await fetch(`${SERVICE_URL}/ext/state`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Herd-Token': serviceToken },
-      body: JSON.stringify({ ...data, tabs }),
-    });
-  } catch {
-    // Service not running
-  }
-}
-
-// Poll every 3 seconds for commands (no longer pushes state unconditionally)
-setInterval(() => pollService(), 3000);

@@ -78,7 +78,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.close();
   });
 
-  // AI Agent connection status
+  // AI Agent connection status — only show section if bridge is running
+  const aiSection = document.getElementById('aiSection');
   const aiStatus = document.getElementById('aiStatus');
   const aiDot = document.getElementById('aiDot');
   const aiHint = document.getElementById('aiHint');
@@ -87,16 +88,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const res = await fetch('http://127.0.0.1:9922/health', { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
+        aiSection.style.display = '';
         aiDot.className = 'status-dot';
         aiStatus.textContent = 'Connected';
         aiHint.innerHTML = 'Your AI agent can organize tabs. Try:<br><code>"Organize my tabs"</code>';
-      } else {
-        throw new Error();
       }
     } catch {
-      aiDot.className = 'status-dot off';
-      aiStatus.textContent = 'Not connected';
-      aiHint.innerHTML = 'Run <code>npx herd-tabs --install</code> to enable AI control.';
+      // Bridge not running — keep section hidden, extension works standalone
+    }
     }
   }
   checkAiConnection();

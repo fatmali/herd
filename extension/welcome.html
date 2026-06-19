@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to Herd</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #22A65C;
+      --green-light: #E8F5EE;
+      --charcoal: #1A1A1A;
+      --grey: #6B7280;
+      --bg: #FAFCFA;
+      --white: #FFFFFF;
+      --font-display: 'Fraunces', serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--charcoal);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 60px 24px;
+    }
+
+    .container {
+      max-width: 580px;
+      width: 100%;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .hero-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--grey);
+      font-size: 15px;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .card h2 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card p {
+      color: var(--grey);
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .shortcuts {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    .shortcuts li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+
+    .shortcuts li:last-child { border-bottom: none; }
+
+    kbd {
+      background: var(--green-light);
+      color: var(--green);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
+    .note {
+      background: var(--green-light);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 13px;
+      color: var(--charcoal);
+      margin-top: 16px;
+    }
+
+    .note strong {
+      color: var(--green);
+    }
+
+    .cta {
+      text-align: center;
+      margin-top: 32px;
+    }
+
+    .cta a {
+      display: inline-block;
+      background: var(--green);
+      color: white;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .cta a:hover {
+      background: #1B8F4E;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111;
+        --white: #1A1A1A;
+        --charcoal: #F0F0F0;
+        --grey: #9CA3AF;
+        --green-light: rgba(34, 166, 92, 0.15);
+      }
+      .card { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+      .shortcuts li { border-color: #2a2a2a; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="hero-icon">🐑</div>
+      <h1>Welcome to Herd</h1>
+      <p class="subtitle">Your tabs, organized. Your context, preserved.</p>
+    </div>
+
+    <div class="card">
+      <h2>⌨️ Keyboard shortcuts</h2>
+      <p>Herd is built for speed. These shortcuts work from any tab:</p>
+      <ul class="shortcuts">
+        <li>
+          <span>Search all open tabs</span>
+          <kbd>Ctrl+Shift+H</kbd>
+        </li>
+        <li>
+          <span>Open context recovery</span>
+          <kbd>Ctrl+Shift+L</kbd>
+        </li>
+      </ul>
+      <div class="note">
+        <strong>Tip:</strong> If a shortcut doesn't work, another extension may
+        have claimed it. Remap at <code>chrome://extensions/shortcuts</code>
+        (or <code>edge://extensions/shortcuts</code>).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 How it works</h2>
+      <p>
+        Herd automatically groups tabs by URL patterns — PRs together, docs
+        together, design tools together. Click the toolbar icon and hit
+        <strong>Organize Now</strong> to see it in action.
+      </p>
+      <p>
+        You can customize rules in Settings, or just let the defaults do
+        their thing.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>🧠 Context recovery</h2>
+      <p>
+        Came back from a break and forgot what you were doing? The recovery
+        screen shows a timeline of your recent tabs with visual thumbnails —
+        so you can <em>recognize</em> where you were instead of trying to
+        <em>remember</em>.
+      </p>
+    </div>
+
+    <div class="cta">
+      <a href="#" id="closeWelcome">Got it — let's go</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('closeWelcome').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.close();
+    });
+  </script>
+</body>
+</html>
