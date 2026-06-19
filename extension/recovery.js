@@ -31,9 +31,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Render
   content.innerHTML = `
     <div class="timeline-section">
-      <div class="section-label">Recently touched</div>
-      <div class="timeline">
-        ${data.timeline.map(tab => renderTimelineCard(tab, thumbnails)).join('')}
+      <div class="section-label">Your timeline</div>
+      <div class="timeline-wrapper">
+        <button class="timeline-scroll-hint left hidden" id="scrollLeft">‹</button>
+        <div class="timeline" id="timeline">
+          ${data.timeline.map(tab => renderTimelineCard(tab, thumbnails)).join('')}
+        </div>
+        <button class="timeline-scroll-hint right" id="scrollRight">›</button>
       </div>
     </div>
     <div class="herds-section">
@@ -46,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Attach event listeners
   attachListeners(data);
+  attachScrollArrows();
 });
 
 // ─── Thumbnail Loading ─────────────────────────────────────────────────────────
@@ -97,29 +102,23 @@ function renderHerdCard(herd, thumbnails) {
       </div>
       <input class="herd-note" placeholder="What's this herd for?"
         value="${escapeAttr(herd.note)}" data-herd-id="${herd.id}">
-      <div class="herd-tabs">
-        ${herd.tabs.map(tab => renderTabCard(tab, thumbnails)).join('')}
+      <div class="herd-tabs-list">
+        ${herd.tabs.sort((a, b) => b.lastAccessed - a.lastAccessed).map(tab => renderTabRow(tab)).join('')}
       </div>
     </div>
   `;
 }
 
-function renderTabCard(tab, thumbnails) {
-  const thumb = thumbnails[tab.id];
-  const thumbHtml = thumb
-    ? `<img src="${thumb}" alt="">`
-    : `<div class="tab-thumb-fallback">
-         ${tab.favIconUrl ? `<img src="${tab.favIconUrl}" alt="">` : ''}
-         <span>${escapeHtml(tab.title || 'Untitled')}</span>
-       </div>`;
+function renderTabRow(tab) {
+  let domain = '';
+  try { domain = new URL(tab.url).hostname.replace('www.', ''); } catch {}
 
   return `
-    <div class="tab-card" data-tab-id="${tab.id}" data-window-id="${tab.windowId}">
-      <div class="tab-thumb">${thumbHtml}</div>
-      <div class="tab-meta">
-        <div class="tab-title">${escapeHtml(tab.title || 'Untitled')}</div>
-        <div class="tab-time">${timeAgo(tab.lastAccessed)}</div>
-      </div>
+    <div class="tab-row" data-tab-id="${tab.id}" data-window-id="${tab.windowId}">
+      <img class="tab-row-favicon" src="${tab.favIconUrl || ''}" onerror="this.style.display='none'" alt="">
+      <span class="tab-row-title">${escapeHtml(tab.title || 'Untitled')}</span>
+      <span class="tab-row-domain">${escapeHtml(domain)}</span>
+      <span class="tab-row-time">${timeAgo(tab.lastAccessed)}</span>
     </div>
   `;
 }
@@ -128,7 +127,7 @@ function renderTabCard(tab, thumbnails) {
 
 function attachListeners(data) {
   // Click tab cards → activate that tab
-  document.querySelectorAll('.timeline-card, .tab-card').forEach(card => {
+  document.querySelectorAll('.timeline-card, .tab-row').forEach(card => {
     card.addEventListener('click', () => {
       const tabId = parseInt(card.dataset.tabId, 10);
       const windowId = parseInt(card.dataset.windowId, 10);
@@ -195,6 +194,32 @@ function attachListeners(data) {
       }
     });
   });
+}
+
+// ─── Scroll Arrows ─────────────────────────────────────────────────────────────
+
+function attachScrollArrows() {
+  const timeline = document.getElementById('timeline');
+  const leftBtn = document.getElementById('scrollLeft');
+  const rightBtn = document.getElementById('scrollRight');
+
+  if (!timeline || !leftBtn || !rightBtn) return;
+
+  function updateArrows() {
+    leftBtn.classList.toggle('hidden', timeline.scrollLeft <= 10);
+    rightBtn.classList.toggle('hidden', timeline.scrollLeft >= timeline.scrollWidth - timeline.clientWidth - 10);
+  }
+
+  leftBtn.addEventListener('click', () => {
+    timeline.scrollBy({ left: -400, behavior: 'smooth' });
+  });
+
+  rightBtn.addEventListener('click', () => {
+    timeline.scrollBy({ left: 400, behavior: 'smooth' });
+  });
+
+  timeline.addEventListener('scroll', updateArrows);
+  updateArrows();
 }
 
 // ─── Utilities ─────────────────────────────────────────────────────────────────

@@ -220,6 +220,56 @@
       font-size: 10px;
     }
 
+    /* Quick actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .quick-action {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--light-grey);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      text-decoration: none;
+    }
+
+    .quick-action:hover {
+      background: var(--green-subtle);
+      border-color: var(--green);
+    }
+
+    .quick-action-icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .quick-action-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .quick-action-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--charcoal);
+      display: block;
+    }
+
+    .quick-action-shortcut {
+      font-size: 9.5px;
+      color: var(--grey);
+      font-family: var(--font-mono);
+      display: block;
+      margin-top: 1px;
+    }
+
     /* Footer */
     .footer {
       padding: 12px 20px;
@@ -270,6 +320,25 @@
   <div class="section">
     <button class="btn-primary" id="organizeBtn">Organize Now</button>
     <button class="btn-secondary" id="ungroupBtn">Ungroup All</button>
+  </div>
+
+  <div class="section">
+    <div class="quick-actions">
+      <a class="quick-action" id="searchLink">
+        <span class="quick-action-icon">🔍</span>
+        <span class="quick-action-text">
+          <span class="quick-action-label">Search</span>
+          <span class="quick-action-shortcut">Ctrl+Shift+H</span>
+        </span>
+      </a>
+      <a class="quick-action" id="recoveryLink">
+        <span class="quick-action-icon">🧭</span>
+        <span class="quick-action-text">
+          <span class="quick-action-label">Where was I?</span>
+          <span class="quick-action-shortcut">Ctrl+Shift+L</span>
+        </span>
+      </a>
+    </div>
   </div>
 
   <div class="section">

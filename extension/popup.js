@@ -59,6 +59,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.openOptionsPage();
   });
 
+  // Quick actions
+  document.getElementById('searchLink').addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && !tab.url.startsWith('chrome://') && !tab.url.startsWith('edge://')) {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['search/search.js'] });
+    }
+    window.close();
+  });
+
+  document.getElementById('recoveryLink').addEventListener('click', async () => {
+    const existing = await chrome.tabs.query({ url: chrome.runtime.getURL('recovery.html') });
+    if (existing.length > 0) {
+      chrome.tabs.update(existing[0].id, { active: true });
+    } else {
+      chrome.tabs.create({ url: 'recovery.html' });
+    }
+    window.close();
+  });
+
   // AI Agent connection status
   const aiStatus = document.getElementById('aiStatus');
   const aiDot = document.getElementById('aiDot');
