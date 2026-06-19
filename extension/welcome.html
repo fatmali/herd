@@ -211,24 +211,6 @@
     </div>
   </div>
 
-  <script>
-    document.getElementById('closeWelcome').addEventListener('click', (e) => {
-      e.preventDefault();
-      // Try multiple close strategies
-      try {
-        chrome.tabs.getCurrent((tab) => {
-          if (tab) {
-            chrome.tabs.remove(tab.id);
-          } else {
-            window.close();
-          }
-        });
-      } catch {
-        window.close();
-      }
-      // Fallback: navigate to new tab if nothing else worked after 200ms
-      setTimeout(() => { location.href = 'about:blank'; }, 200);
-    });
-  </script>
+  <script src="welcome.js"></script>
 </body>
 </html>
