@@ -8,7 +8,7 @@ document.getElementById('closeWelcome').addEventListener('click', (e) => {
         window.close();
       }
     });
-  } catch {
+  } catch (err) {
     window.close();
   }
   setTimeout(() => { location.href = 'about:blank'; }, 200);

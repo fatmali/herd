@@ -93,9 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         aiStatus.textContent = 'Connected';
         aiHint.innerHTML = 'Your AI agent can organize tabs. Try:<br><code>"Organize my tabs"</code>';
       }
-    } catch {
+    } catch (err) {
       // Bridge not running — keep section hidden, extension works standalone
-    }
     }
   }
   checkAiConnection();

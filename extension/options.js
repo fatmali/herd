@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         config.rules = { ...config.rules, ...sanitized };
         await chrome.storage.local.set({ rules: config.rules });
         renderRules();
-      } catch {
+      } catch (err) {
         alert('Invalid JSON file');
       }
     });
