@@ -58,7 +58,7 @@ English
 | `nativeMessaging` | Connects to an optional local AI bridge (localhost only) for programmatic tab organization. Not required for core functionality. |
 
 ## Privacy Policy URL
-Link to PRIVACY.md hosted on GitHub Pages or similar.
+https://github.com/fatmali/herd/blob/main/PRIVACY.md
 
 ## Developer Notes
 

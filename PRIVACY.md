@@ -45,4 +45,4 @@ communicates only between the extension and a local process over `127.0.0.1`.
 
 ## Contact
 
-Questions? Open an issue on the [GitHub repository](https://github.com/user/herd).
+Questions? Open an issue on the [GitHub repository](https://github.com/fatmali/herd).
